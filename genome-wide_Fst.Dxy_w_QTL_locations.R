@@ -382,8 +382,17 @@ qtl_f_dM_bp <- all_QTL_CI %>%
     )
   ) %>%
   ungroup()
+# Density and 5th/95th percentile tails for f_dM (shade outer 5% each tail)
+d_fdM <- density(f_dM_summary$avg_f_dM_per_cM)
+p05_fdM <- quantile(f_dM_summary$avg_f_dM_per_cM, 0.05)
+p95_fdM <- quantile(f_dM_summary$avg_f_dM_per_cM, 0.95)
+tail_left_fdM <- data.frame(x = d_fdM$x, y = d_fdM$y) %>% filter(x <= p05_fdM)
+tail_right_fdM <- data.frame(x = d_fdM$x, y = d_fdM$y) %>% filter(x >= p95_fdM)
+
 f_dM_windows_hist_w.QTL.CIs <- ggplot() +
   geom_histogram(data = f_dM_summary, aes(x = avg_f_dM_per_cM, y = after_stat(density)), bins = 50, fill = "grey80", color = "black") +
+  geom_ribbon(data = tail_left_fdM, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.35) +
+  geom_ribbon(data = tail_right_fdM, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.35) +
   geom_density(data = f_dM_summary, aes(x = avg_f_dM_per_cM, y = after_stat(density)), color = "darkblue", linewidth = 0.8) +
   geom_vline(data = qtl_f_dM_bp, aes(xintercept = avg_f_dM_QTL, color = trait), linetype = "solid", linewidth = 1) +
   scale_color_manual(values = trait_colors) +
@@ -411,8 +420,17 @@ qtl_dxy_bp <- all_QTL_CI_dxy %>%
     )
   ) %>%
   ungroup()
+# Density and 5th/95th percentile tails for Dxy (shade outer 5% each tail)
+d_dxy <- density(dxy_summary$avg_dxy_per_cM)
+p05_dxy <- quantile(dxy_summary$avg_dxy_per_cM, 0.05)
+p95_dxy <- quantile(dxy_summary$avg_dxy_per_cM, 0.95)
+tail_left_dxy <- data.frame(x = d_dxy$x, y = d_dxy$y) %>% filter(x <= p05_dxy)
+tail_right_dxy <- data.frame(x = d_dxy$x, y = d_dxy$y) %>% filter(x >= p95_dxy)
+
 dxy_windows_hist_w.QTL.CIs <- ggplot() +
   geom_histogram(data = dxy_summary, aes(x = avg_dxy_per_cM, y = after_stat(density)), bins = 50, fill = "grey80", color = "black") +
+  geom_ribbon(data = tail_left_dxy, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.35) +
+  geom_ribbon(data = tail_right_dxy, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.35) +
   geom_density(data = dxy_summary, aes(x = avg_dxy_per_cM, y = after_stat(density)), color = "darkblue", linewidth = 0.8) +
   geom_vline(data = qtl_dxy_bp, aes(xintercept = avg_dxy_QTL, color = trait), linetype = "solid", linewidth = 1, show.legend = TRUE, key_glyph = "point") +
   scale_color_manual(values = trait_colors) +
@@ -455,8 +473,17 @@ qtl_fst_cm <- all_QTL_CI_fst %>%
     )
   ) %>%
   ungroup()
+# Density and 5th/95th percentile tails for Fst (shade outer 5% each tail)
+d_fst <- density(fst_summary$avg_fst_per_cM)
+p05_fst <- quantile(fst_summary$avg_fst_per_cM, 0.05)
+p95_fst <- quantile(fst_summary$avg_fst_per_cM, 0.95)
+tail_left_fst <- data.frame(x = d_fst$x, y = d_fst$y) %>% filter(x <= p05_fst)
+tail_right_fst <- data.frame(x = d_fst$x, y = d_fst$y) %>% filter(x >= p95_fst)
+
 fst_windows_hist_w.QTL.CIs <- ggplot() +
   geom_histogram(data = fst_summary, aes(x = avg_fst_per_cM, y = after_stat(density)), binwidth = 0.01, fill = "grey80", color = "black") +
+  geom_ribbon(data = tail_left_fst, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.35) +
+  geom_ribbon(data = tail_right_fst, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.35) +
   geom_density(data = fst_summary, aes(x = avg_fst_per_cM, y = after_stat(density)), color = "darkblue", linewidth = 0.8) +
   geom_vline(data = qtl_fst_cm, aes(xintercept = avg_fst_QTL, color = trait), linetype = "solid", linewidth = 1, show.legend = TRUE, key_glyph = "point") +
   scale_color_manual(values = trait_colors, labels = trait_labels) +
