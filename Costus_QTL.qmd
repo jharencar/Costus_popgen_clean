@@ -1,0 +1,1719 @@
+---
+title: "QTL mapping of F3 Costus allenii x C. villosissimus hybrids"
+author: "Julia Harenčár"
+format: 
+  html: 
+    self-contained: true #makes one html file to render that is sharable
+    page-layout: full #uses the full page
+    code-fold: true #lets user fold up codes
+    code-tools: true #makes an option in the upper left for users to reveal/hide all code and copy source code
+    #makes long lines of code rap
+    code-overflow: wrap
+    #makes table of contents
+    toc: true
+    #sets location of table of contents
+    toc-location: left
+#set theme settings. in this case user can switch between light and dark mode
+theme:
+  #give light option
+  light: flatly
+  #give dark option
+  dark: darkly
+---
+started: 09/29/2025
+last updated: 10/16/2025
+
+## load packages
+
+```{r}
+library(dplyr)
+library(qtl)
+library(qtl2ggplot)
+```
+
+## Import the data
+
+```{r}
+## Note the use of estimate.map=FALSE. Markers will be assigned dummy locations, 
+## with no attempt to estimate inter-marker distances.
+OG.cross <- read.cross("csvs", ".", genfile = "f3gen_250924_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001.csv", phefile = "F3phe_onehotcovar_newHI_20250925.csv", estimate.map=FALSE)
+
+# jitter map positions because many markers have same cM location (cM locations from lepmap2)
+OG.cross <- jittermap(OG.cross) 
+```
+
+## filter
+
+```{r}
+## Omit individuals and markers with lots of missing data
+summary(OG.cross)
+ 
+# look at the pattern of missing data (can take a few minutes to load)
+plotMissing(OG.cross)
+# looks like some individuals have long bits of missing data.
+
+# Plot of number of genotyped markers for each individual (left panel) and
+# number of genotyped individuals for each marker (right panel).
+par(mfrow=c(1,2), las=1)
+plot(ntyped(OG.cross), ylab="No. typed markers", main="No. genotypes by individual")
+plot(ntyped(OG.cross, "mar"), ylab="No. typed individuals", main="No. genotypes by marker")
+
+# looks like few indivs with notably limited genos, quite a few markers with very few genotypes (unsurprisingly)
+
+## Omit individuals with less than 80% of markers (36783*.80 = 29426) 
+OG.cross <- subset(OG.cross, ind=(ntyped(OG.cross)>29426))
+# removes one individual - now 388
+
+## identify names of markers to drop, based on genotypes-per-marker plot
+# drop all markers with less than ~80% genotyped individuals (388*0.8 = 310)
+nt.bymar <- ntyped(OG.cross, "mar")
+todrop <- names(nt.bymar[nt.bymar < 310]) # 91 markers to drop
+## drop those markers
+filtered.cross <- drop.markers(OG.cross, todrop)
+
+## look for duplicate markers (i.e., markers with identical genotypes)
+dup <- findDupMarkers(filtered.cross, exact.only=TRUE, adjacent.only=TRUE) # 4666 markers
+Costus_w.o_dups <- drop.markers(filtered.cross, unlist(dup))
+# 09/29 with exact.only=FALSE: brings total markers 36783 --> 9403, % genotyped from 98.4% --> 97%
+# 10/06 with exact.only=TRUE: brings total markers 36783 --> 14889, % genotyped from 98.4% --> 97.5%
+```
+
+## Identify duplicate individuals
+
+```{r}
+## Identify duplicate individuals
+cg <- comparegeno(Costus_w.o_dups)
+par(mfrow=c(1,1), las=1)
+hist(cg[lower.tri(cg)], breaks=seq(0, 1, len=101), xlab="No. matching genotypes")
+rug(cg[lower.tri(cg)])
+
+## identify pairs with over 95% matching genotypes 
+# checked, and 2 pairs of these pairs are true accidental duplicates, 
+# other is either truly very related siblings, or ID mix up error
+wh <- which(cg > 0.95, arr=TRUE)
+wh <- wh[wh[,1] < wh[,2],]
+wh
+
+## will remove one per pair
+# 22_058  20  35
+# 22_055  18  41
+# 23_042 232 294
+
+## inspect the genotype matches for these pairs
+g1 <- pull.geno(Costus_w.o_dups, chr = 1)
+g2 <- pull.geno(Costus_w.o_dups, chr = 2)
+g3 <- pull.geno(Costus_w.o_dups, chr = 3)
+g4 <- pull.geno(Costus_w.o_dups, chr = 4)
+g5 <- pull.geno(Costus_w.o_dups, chr = 5)
+g6 <- pull.geno(Costus_w.o_dups, chr = 6)
+g7 <- pull.geno(Costus_w.o_dups, chr = 7)
+g8 <- pull.geno(Costus_w.o_dups, chr = 8)
+g9 <- pull.geno(Costus_w.o_dups, chr = 9)
+
+## Omit the genotypes that mismatch, as these are indicated to be errors in one
+## or the other individual (or both)
+for(i in 1:nrow(wh)) {
+  tozero <- !is.na(g1[wh[i,1],]) & !is.na(g1[wh[i,2],]) & g1[wh[i,1],] != g1[wh[i,2],]
+  Costus_w.o_dups$geno[[1]]$data[wh[i,1],tozero] <- NA
+}
+for(i in 1:nrow(wh)) {
+  tozero <- !is.na(g2[wh[i,1],]) & !is.na(g2[wh[i,2],]) & g2[wh[i,1],] != g2[wh[i,2],]
+  Costus_w.o_dups$geno[[2]]$data[wh[i,1],tozero] <- NA
+}
+for(i in 1:nrow(wh)) {
+  tozero <- !is.na(g3[wh[i,1],]) & !is.na(g3[wh[i,2],]) & g3[wh[i,1],] != g3[wh[i,2],]
+  Costus_w.o_dups$geno[[3]]$data[wh[i,1],tozero] <- NA
+}
+for(i in 1:nrow(wh)) {
+  tozero <- !is.na(g4[wh[i,1],]) & !is.na(g4[wh[i,2],]) & g4[wh[i,1],] != g4[wh[i,2],]
+  Costus_w.o_dups$geno[[4]]$data[wh[i,1],tozero] <- NA
+}
+for(i in 1:nrow(wh)) {
+  tozero <- !is.na(g5[wh[i,1],]) & !is.na(g5[wh[i,2],]) & g5[wh[i,1],] != g5[wh[i,2],]
+  Costus_w.o_dups$geno[[5]]$data[wh[i,1],tozero] <- NA
+}
+for(i in 1:nrow(wh)) {
+  tozero <- !is.na(g6[wh[i,1],]) & !is.na(g6[wh[i,2],]) & g6[wh[i,1],] != g6[wh[i,2],]
+  Costus_w.o_dups$geno[[6]]$data[wh[i,1],tozero] <- NA
+}
+for(i in 1:nrow(wh)) {
+  tozero <- !is.na(g7[wh[i,1],]) & !is.na(g7[wh[i,2],]) & g7[wh[i,1],] != g7[wh[i,2],]
+  Costus_w.o_dups$geno[[7]]$data[wh[i,1],tozero] <- NA
+}
+for(i in 1:nrow(wh)) {
+  tozero <- !is.na(g8[wh[i,1],]) & !is.na(g8[wh[i,2],]) & g8[wh[i,1],] != g8[wh[i,2],]
+  Costus_w.o_dups$geno[[8]]$data[wh[i,1],tozero] <- NA
+}
+for(i in 1:nrow(wh)) {
+  tozero <- !is.na(g9[wh[i,1],]) & !is.na(g9[wh[i,2],]) & g9[wh[i,1],] != g9[wh[i,2],]
+  Costus_w.o_dups$geno[[9]]$data[wh[i,1],tozero] <- NA
+}
+
+## Omit one individual from each pair
+Costus.clean <- subset(Costus_w.o_dups, ind=-wh[,2]) 
+
+# this removes markers again because of adjacent.only=TRUE; new markers are adjacent after the first dup removal
+# 09/29: brings total markers 9492 --> 6938, % genotyped from 97% --> 96.4%
+# ultimately because it is dropping genotype values from places where they are not informative, I believe. 
+
+### not removing markers for segregation distortion because already filtered with Lepmap
+# for segregation distortion in a way suited to the F2 family structure of thie F3 data
+
+### Data WITHOUT removing duplicates (including dups) ##
+# NOTE: Without removing any dups, it never finishes the recomb freq step; 
+# could try figuring out if I can drop less 
+
+# ## Identify duplicate individuals
+# cg <- comparegeno(filtered.cross)
+# par(mfrow=c(1,1), las=1)
+# hist(cg[lower.tri(cg)], breaks=seq(0, 1, len=101), xlab="No. matching genotypes")
+# rug(cg[lower.tri(cg)])
+# 
+# ## identify pairs with over 95% matching genotypes 
+# # checked, and 2 pairs of these pairs are true accidental duplicates, 
+# # other is either truly very related siblings, or ID mix up error
+# wh <- which(cg > 0.9, arr=TRUE)
+# wh <- wh[wh[,1] < wh[,2],]
+# wh
+# 
+# ## Omit one individual from each pair
+# Costus_w.dups <- subset(filtered.cross, ind=-wh[,2])
+```
+
+## est.rf
+
+```{r}
+# estimate recombination 
+## Study pairwise marker linkages; look for switched alleles
+## The function est.rf() is used to estimate the recombination fraction between 
+## each pair and to calculate a LOD score for a test of rec. freq. = 1/2.
+
+Costus <- est.rf(Costus) 
+Costus <- est.rf(Costus.clean) #10/06 running with less duplicates removed in first step and no second dup removal
+
+# takes a long time to run, so save after this step!
+saveRDS(Costus, file="aHMM_251006_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_more_dups_est.rf.rds")
+
+
+# line to read back in the data 
+#Costus <- readRDS(file = "./aHMM_250929_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_est.rf.rds")
+Costus <- readRDS(file="aHMM_251006_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_more_dups_est.rf.rds")
+
+Costus$pheno$log_days_to_radicle <- log(days_to_radicle)
+
+# remove more dups to make smaller cross object for scantwo
+dup <- findDupMarkers(Costus, exact.only=FALSE, adjacent.only=TRUE) 
+Costus_w.o_dups <- drop.markers(Costus, unlist(dup)) 
+summary(Costus_w.o_dups) # total markers 4013 
+saveRDS(Costus_w.o_dups,file="aHMM_251119_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_exact.F_adjacent.T_dups_est.rf.rds") 
+
+Costus_w.o_dups <- readRDS(file="aHMM_251111_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_least_dups_est.rf.rds")
+```
+
+## model selection
+
+```{r}
+## determine the appropriate model to use/covariates to include 
+# first, pull the phenotypes of interest  
+days_to_radicle <- as.numeric(pull.pheno(Costus, "days_to_radicle"))
+log_days_to_radicle <- as.numeric(log(pull.pheno(Costus, "days_to_radicle")))
+GR_cm.dy <- as.numeric(pull.pheno(Costus, "GR_cm.dy"))
+ave_thick <- as.numeric(pull.pheno(Costus, "ave_thick"))
+ave_tough <- as.numeric(pull.pheno(Costus, "ave_tough"))
+N_reabsorp <- as.numeric(pull.pheno(Costus, "N_reabsorp"))
+chloro_reabsorp <- as.numeric(pull.pheno(Costus, "chloro_reabsorp"))
+
+# next, pull potential covariates
+hi <- as.numeric(pull.pheno(Costus, "hybrid_index"))    # C.villosissimus ancestry proportion
+s.cohort <- as.factor(pull.pheno(Costus, "seed.cohort"))  # seed cohort - batch of seeds (independent of dormancy)
+cohort <- as.factor(pull.pheno(Costus, "cohort"))           # growth cohort - batch of seedlings (partially dependent on dormancy)
+fam <- as.factor(pull.pheno(Costus, "family"))           #  F2 parent
+
+## figure out which covar vals have less than 20 samples so as to remove and avoid singular fitting
+# seed cohort
+s.coh.t <- as.data.frame(table(s.cohort))
+
+# GR cohort
+coh.t <- as.data.frame(table(cohort))
+
+fam.t <- as.data.frame(table(fam))
+# 21_241 - 10 (four other fams > 30 individuals)
+
+# next, build a df to use to determine how many individuals in a cohort have data for a given variable
+pheno_df <- data.frame(fam, s.cohort, cohort, days_to_radicle, GR_cm.dy, ave_thick, ave_tough, N_reabsorp, chloro_reabsorp)
+
+
+# look at correlation of covariates with chi squared test
+# first cohort and fam
+cont_table <- table(cohort, fam)
+chi_sqr_coh_fam <- chisq.test(cont_table)
+# X-squared = 819.2, df = 120, p-value < 2.2e-16
+fishers_ext_coh_fam <- fisher.test(cont_table, simulate.p.value=TRUE)
+# p-value = 0.0004998
+# DEFINITELY correlated - remove cohorts not included from model selection below, 
+# but keep all families in for now bc of concerns about F3 data and family structure
+
+# next hi and fam
+kruskal.test(hi ~ cohort)
+# Kruskal-Wallis chi-squared = 68.977, df = 30, p-value = 6.646e-05 
+# visual check 
+df <- data.frame(Column1 = hi, Column2 = cohort)
+ggplot(df, aes(x = cohort, y = hi)) +
+  geom_boxplot() 
+# several cohorts (5,6,9, and 15) have only one individual
+# despite strong kruskal pval, do not look extremely correlated
+# very uneven sample sizes in ea cohort may have an impact
+
+## select a model (identify whcih covariates matter) by calculating AIC stepwise
+model_all<-lm(log_days_to_radicle~hi+fam+s.cohort)
+selectedMod <- step(model_all) # no diff in AIC w and without fam
+summary(selectedMod)
+# log_days_to_radicle ~ s.cohort (didn't include fam OR hi now that using log response)
+
+# ## select a model (identify whcih covariates matter) by calculating AIC stepwise
+# model_all<-lm(days_to_radicle~hi+fam+s.cohort)
+# selectedMod <- step(model_all) # no diff in AIC w and without fam
+# summary(selectedMod)
+# # days_to_radicle ~ hi + s.cohort (didn't include fam, overspecified model if I include it...)
+
+model_all<-lm(GR_cm.dy~hi+fam+cohort)
+selectedMod <- step(model_all)
+summary(selectedMod)
+# GR_cm.dy ~ hi + fam + cohort
+
+model_all<-lm(ave_thick~hi+cohort+fam)
+selectedMod <- step(model_all)
+summary(selectedMod)
+# ave_thick ~ cohort + fam
+
+model_all<-lm(ave_tough~hi+cohort+fam)
+selectedMod <- step(model_all)
+summary(selectedMod)
+# ave_tough ~ hi + cohort + fam 
+
+model_all<-lm(N_reabsorp~hi+cohort+fam)
+selectedMod <- step(model_all)
+summary(selectedMod)
+# N_reabsorp ~ hi + cohort + fam 
+
+model_all<-lm(chloro_reabsorp~hi+cohort+fam)
+selectedMod <- step(model_all)
+summary(selectedMod)
+# chloro_reabsorp ~ hi + cohort + fam 
+
+## now step through all one-hot encoded cohorts (containing more than 5 indivs), and families, to remove low sample size cohorts
+# comment added with number when less than 20 in a group UHG< but could be less for specific measurements... having this issue with thickness
+s.coh2 <- as.factor(pull.pheno(Costus, "s.coh2"))
+s.coh3 <- as.factor(pull.pheno(Costus, "s.coh3")) # 16
+s.coh4 <- as.factor(pull.pheno(Costus, "s.coh4"))
+s.coh6 <- as.factor(pull.pheno(Costus, "s.coh6"))
+s.coh7 <- as.factor(pull.pheno(Costus, "s.coh7"))
+s.coh8 <- as.factor(pull.pheno(Costus, "s.coh8"))
+s.coh9 <- as.factor(pull.pheno(Costus, "s.coh9"))
+s.coh10 <- as.factor(pull.pheno(Costus, "s.coh10")) # 13
+s.coh11 <- as.factor(pull.pheno(Costus, "s.coh11")) # 9
+s.coh12 <- as.factor(pull.pheno(Costus, "s.coh12")) # 10
+s.coh13 <- as.factor(pull.pheno(Costus, "s.coh13"))
+s.coh14 <- as.factor(pull.pheno(Costus, "s.coh14")) # 13
+s.coh15 <- as.factor(pull.pheno(Costus, "s.coh15")) # 10
+
+coh7 <- as.factor(pull.pheno(Costus, "coh7")) # 10
+coh10 <- as.factor(pull.pheno(Costus, "coh10")) # 17
+coh11 <- as.factor(pull.pheno(Costus, "coh11")) # 17
+coh12 <- as.factor(pull.pheno(Costus, "coh12")) # 7
+coh13 <- as.factor(pull.pheno(Costus, "coh13")) # 17
+coh14 <- as.factor(pull.pheno(Costus, "coh14")) # 8
+coh16 <- as.factor(pull.pheno(Costus, "coh16")) # 11
+coh17 <- as.factor(pull.pheno(Costus, "coh17")) # 9
+coh18 <- as.factor(pull.pheno(Costus, "coh18"))
+coh19 <- as.factor(pull.pheno(Costus, "coh19")) # 16
+coh20 <- as.factor(pull.pheno(Costus, "coh20")) # 8
+coh21 <- as.factor(pull.pheno(Costus, "coh21"))
+coh22 <- as.factor(pull.pheno(Costus, "coh22"))
+coh24 <- as.factor(pull.pheno(Costus, "coh24"))
+coh25 <- as.factor(pull.pheno(Costus, "coh25")) # 19
+coh26 <- as.factor(pull.pheno(Costus, "coh26")) # 9
+coh27 <- as.factor(pull.pheno(Costus, "coh27"))
+coh28 <- as.factor(pull.pheno(Costus, "coh28")) # 14
+coh29 <- as.factor(pull.pheno(Costus, "coh29")) # 13
+coh30 <- as.factor(pull.pheno(Costus, "coh30")) # 15
+coh31 <- as.factor(pull.pheno(Costus, "coh31")) # 15
+coh32 <- as.factor(pull.pheno(Costus, "coh32")) # 13
+coh33 <- as.factor(pull.pheno(Costus, "coh33")) # 4
+coh34 <- as.factor(pull.pheno(Costus, "coh34")) # 14
+
+F21_238 <- as.factor(pull.pheno(Costus, "F21_238"))
+F21_259 <- as.factor(pull.pheno(Costus, "F21_259"))
+F21_241 <- as.factor(pull.pheno(Costus, "F21_241")) # 10
+F21_284 <- as.factor(pull.pheno(Costus, "F21_284"))
+F21_232 <- as.factor(pull.pheno(Costus, "F21_232"))
+```
+#### dormancy
+```{r}
+# Count number of individuals with dormancy data per fam
+with_SD <- pheno_df[!is.na(pheno_df$days_to_radicle), ]
+table(with_SD$fam)
+
+# Count number of individuals with SD data per cohort
+table(with_SD$s.cohort)
+
+# log transform
+Costus$pheno$log_days_to_radicle <- log(days_to_radicle)
+
+# not useing fam OR hi bc of model selection above
+# ONLY using cohorts with >=10 individuals
+model_all<-lm(log_days_to_radicle~s.coh2+s.coh3+s.coh4+s.coh6+s.coh7+s.coh8+s.coh9+s.coh10+s.coh12+s.coh13+s.coh14+s.coh15)
+selectedMod <- step(model_all)
+summary(selectedMod)
+# pull selected covariates (plus families even though not selected)
+#  formula = days_to_radicle ~ s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15
+# LATEST RUN 11/10 with log transformed and no hyb index bc not selected above. 
+covariates_SD_select <- pull.pheno(Costus, c("s.coh4", "s.coh7", "s.coh8", "s.coh9", "s.coh14", "s.coh15"))
+
+# because data so not normal, check residuals:
+lm_fit <- lm(log_days_to_radicle ~ s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15)
+residuals <- resid(lm_fit)
+fitted_vals <- fitted(lm_fit)
+
+# # because data so not normal, check residuals:
+# lm_fit <- lm(days_to_radicle ~ hi + s.coh4 + s.coh7 + s.coh8 + s.coh15)
+# residuals <- resid(lm_fit)
+# fitted_vals <- fitted(lm_fit)
+
+# doesn't look good... but a lot better than with no log transformation... that said keep in mind that the big tail will have odd influence on peaks... 
+hist(residuals, breaks=30, main="Histogram of residuals", xlab="Residuals")
+qqnorm(residuals); qqline(residuals, col="red")
+
+plot(fitted_vals, residuals, pch=19, col="gray",
+     xlab="Fitted values", ylab="Residuals",
+     main="Residuals vs. fitted")
+abline(h=0, col="red")
+
+## original trial of diff transformations 
+# # Try the log transformation
+# 
+# lm_fit <- lm(log(days_to_radicle) ~ hi + s.coh4 + s.coh7 + s.coh8 + s.coh15)
+# residuals <- resid(lm_fit)
+# fitted_vals <- fitted(lm_fit)
+# 
+# Costus$pheno$log_days_to_radicle <- log(days_to_radicle)
+# 
+# # still not great, but better
+# hist(residuals, breaks=30, main="Histogram of residuals", xlab="Residuals")
+# qqnorm(residuals); qqline(residuals, col="red")
+# 
+# plot(fitted_vals, residuals, pch=19, col="gray",
+#      xlab="Fitted values", ylab="Residuals",
+#      main="Residuals vs. fitted")
+# abline(h=0, col="red")
+# 
+# # try box-cox transformation:
+# library(MASS)
+# bc <- boxcox(lm(days_to_radicle ~ 1))       # find lambda maximizing log-likelihood
+# lambda <- -0.46
+# bc_days_to_radicle <- if (abs(lambda) < 1e-6) log(days_to_radicle) else (days_to_radicle^lambda - 1)/lambda
+# 
+# Costus$pheno$bc_days_to_radicle <- (Costus$pheno$days_to_radicle ^ lambda - 1) / lambda
+# # check it out
+# lm_fit <- lm(log(bc_days_to_radicle) ~ hi + s.coh4 + s.coh7 + s.coh8 + s.coh15)
+# residuals <- resid(lm_fit)
+# fitted_vals <- fitted(lm_fit)
+# 
+# # way better on one end, but worse on the other 
+# hist(residuals, breaks=30, main="Histogram of residuals", xlab="Residuals")
+# qqnorm(residuals); qqline(residuals, col="red")
+# 
+# # compare just scanone runs of the bc and log to non-transformed and non-parametric
+# seed.dormancy.scanone.hk_no.fam <- scanone(Costus, method="hk", pheno.col = "bc_days_to_radicle", addcovar=covariates_SD_select)
+# # plot
+# plot(seed.dormancy.scanone.hk_no.fam,lodcolumn=1, ylab="LOD score - seed dormancy")
+# # top peaks list
+# summary(seed.dormancy.scanone.hk_no.fam)
+# 
+# # non-parametric version
+# seed.dormancy.scanone.hk_no.fam <- scanone(Costus, method="hk", pheno.col = "days_to_radicle", model="np", addcovar=covariates_SD_select)
+# # plot
+# plot(seed.dormancy.scanone.hk_no.fam,lodcolumn=1, ylab="LOD score - seed dormancy")
+```
+#### growth rate
+```{r}
+# Count number of individuals with GR data per fam
+with_GR <- pheno_df[!is.na(pheno_df$GR_cm.dy), ]
+table(with_GR$fam)
+# 21_232 21_238 21_241 21_259 21_284 
+#    146    152     10     31     32 
+# fams with data for >=10 individuals
+# F21_238+F21_259+21_241+F21_284+F21_232
+
+# Count number of individuals with GR data per cohort
+table(with_GR$cohort)
+
+# only include cohorts with >=10 individuals 
+model_all<-lm(GR_cm.dy~hi+F21_238+F21_259+F21_284+F21_232+F21_241+coh7+coh10+coh11+coh13+coh16+coh18+coh19+coh21+coh22+coh24+coh25+coh27+coh28+coh29+coh30+coh31+coh32+coh34)
+selectedMod <- step(model_all)
+summary(selectedMod)
+covariates_GR_select <- pull.pheno(Costus, c("hybrid_index", "F21_259", "F21_238", "F21_284", "F21_232","coh7","coh10","coh11", "coh13","coh18","coh19","coh24","coh25","coh27","coh28","coh29","coh30","coh31","coh32","coh34"))
+```
+#### thickness
+```{r}
+# Count number of individuals with ave_thick data per fam
+with_thick <- pheno_df[!is.na(pheno_df$ave_thick), ]
+table(with_thick$fam)
+
+# Count number of individuals with ave_thick data per cohort
+table(with_thick$cohort)
+
+# select a model/determine which cohorts need to be included
+model_all<-lm(ave_thick~hi+F21_238+F21_259+F21_284+F21_232+coh10+coh11+coh13+
+                coh16+coh18+coh19+coh21+coh22+coh24+coh25+coh27+coh28+coh29+
+                coh30+coh31+coh32)
+selectedMod <- step(model_all)
+summary(selectedMod)
+# pull selected covariates 
+covariates_thick_select <- pull.pheno(Costus, c("F21_238", "F21_259","F21_284","F21_232","coh10","coh11","coh18","coh21","coh22","coh24","coh25","coh27","coh28","coh29","coh30","coh31","coh32"))
+```
+  #### toughness
+```{r}
+# toughness and thickness measured concurrently, so share NA structure - no need to redo cohort counts
+# select a model/determine which cohorts need to be included
+model_all<-lm(ave_tough~hi+F21_238+F21_259+F21_284+F21_232+coh10+coh11+coh13+
+                coh16+coh18+coh19+coh21+coh22+coh24+coh25+coh27+coh28+coh29+
+                coh30+coh31+coh32)
+selectedMod <- step(model_all)
+summary(selectedMod)
+# pull selected covariates
+covariates_tough_select <- pull.pheno(Costus, c("hybrid_index", "F21_232","F21_238","F21_259","F21_284","coh10","coh11","coh16","coh19","coh22","coh24","coh27","coh28","coh29","coh30","coh32"))
+```
+####  % N reabsorbed during drought
+```{r}
+# Count number of individuals with N reabsorption data per fam
+with_N <- pheno_df[!is.na(pheno_df$N_reabsorp), ]
+table(with_N$fam)
+
+# Count number of individuals with N reabsorption data per cohort
+table(with_N$cohort)
+
+# select a model/determine which cohorts need to be included
+model_all<-lm(N_reabsorp~hi+F21_238+F21_259+F21_284+F21_232+coh10+coh11+coh13+
+                coh16+coh18+coh19+coh21+coh22+coh24+coh25+coh27+coh28+coh29+
+                coh30+coh31+coh32+coh34)
+selectedMod <- step(model_all)
+summary(selectedMod)
+# pull selected covariates 
+covariates_Nreabs_select <- pull.pheno(Costus, c("hybrid_index", "F21_238","F21_259","F21_232","F21_284","coh10","coh16","coh18","coh21","coh22","coh24","coh25","coh27","coh29","coh30","coh32","coh34"))
+```
+#### % chlorophyll reabsorbed during drought
+```{r}
+# Count number of individuals with chloro reabsorption data per fam
+with_chloro <- pheno_df[!is.na(pheno_df$chloro_reabsorp), ]
+table(with_chloro$fam)
+
+# Count number of individuals with chloro reabsorption data per cohort
+table(with_chloro$cohort)
+
+# select a model/determine which cohorts need to be included
+model_all<-lm(chloro_reabsorp~hi+F21_238+F21_259+F21_284+F21_232+F21_241+coh7+coh10+coh11+coh13+coh16+coh18+coh19+coh21+coh22+coh24+coh25+coh27+coh28+coh29+coh30+coh31+coh32+coh34)
+selectedMod <- step(model_all)
+summary(selectedMod)
+# pull selected covariates
+covariates_Chlreabs_select <- pull.pheno(Costus, c("hybrid_index", "F21_238", "F21_284", "F21_232", "coh13", "coh16", "coh19", "coh21", "coh22", "coh24", "coh25", "coh27", "coh28", "coh30", "coh31", "coh32"))
+```
+## QTL Mapping
+### Seed dormancy mapping
+```{r}
+
+# Seed dormancy scanone with 'hk' method bc not qualitatively diff from mr, and with log transformation:
+seed.dormancy.scanone.hk <- scanone(Costus_prob, method="hk", pheno.col = "log_days_to_radicle", addcovar=covariates_SD_select)
+
+# permutations 
+seed.dormancy.perm.hk <- scanone(Costus_prob, method="hk", pheno.col ="log_days_to_radicle", n.perm=1000, addcovar=covariates_SD_select)
+saveRDS(seed.dormancy.perm.hk, file="log.seed.dormancy.scanone-hk_1kperm_251122.rds")
+seed.dormancy.perm.hk <- readRDS("log.seed.dormancy.scanone-hk_1kperm_251122.rds")
+# plot histogram of max lod scores
+plot(seed.dormancy.perm.hk,lodcolumn=1)
+summary(seed.dormancy.scanone.hk, perms=seed.dormancy.perm.hk, alpha=0.05, pvalues=TRUE)
+#                  chr  pos   lod  pval
+# Chrom2_18980613    2 68.6  7.56 0.000
+# Chrom4_17232613    4 25.3  3.68 0.044
+# Chrom6_119185681   6 55.5 17.55 0.000
+
+# lod cutoffs
+summary(seed.dormancy.perm.hk,alpha=c(0.05, 0.1, 0.2))
+# LOD thresholds (1000 permutations)
+#      lod
+# 5%  3.58
+# 10% 3.26
+# 20% 2.93
+
+# set lod cutoff for plot
+SD_10cutoff_lod = 3.26
+# check peaks above threshold
+summary(seed.dormancy.scanone.hk[seed.dormancy.scanone.hk$lod > SD_10cutoff_lod,])
+#                  chr  pos   lod
+# Chrom2_18980613    2 68.6  7.56
+# Chrom4_17232613    4 25.3  3.68
+# Chrom6_119185681   6 55.5 17.55
+
+# save the data
+write.table(summary(seed.dormancy.scanone.hk[seed.dormancy.scanone.hk$lod > SD_10cutoff_lod,]), "log.seed.dormancy_sig.peaks_scanone-hk_most.dups_1kperm_251130.txt", quote = F)
+```
+#### plot
+```{r}
+#| label: Seed dormancy plot
+#| eval: false
+#| include: false
+
+#plot all
+pdf("./QTL_plots/all_qtl_251130.pdf",40,18)
+par(mar = c(5, 5, 4, 2), mfrow = c(3,2))
+plot(seed.dormancy.scanone.hk,lodcolumn=1,
+     ylab="LOD score",
+     main = "seed dormancy",
+     cex.lab = 2,
+     cex.main = 2.5)
+abline(h=SD_10cutoff_lod, col="red", lwd=3)
+pdf("./QTL_plots/log.seed.dormancy-qtl_251016.pdf",24,7)
+par(mar = c(5, 5, 4, 2))
+seed.dormancy.scanone.hk %>% plot(.,lodcolumn=1, 
+                                  ylab="LOD score",
+                                  main = "seed dormancy",
+                                  cex.lab = 2,
+                                  cex.main = 2.5)
+abline(h=SD_10cutoff_lod, col="red", lwd=3)
+dev.off()
+```
+### Growth rate
+```{r}
+growth.rate.scanone.hk <- scanone(Costus_prob, method="hk", pheno.col = "GR_cm.dy", addcovar=covariates_GR_select)
+# Dropping 14 individuals with missing phenotypes.
+plot(growth.rate.scanone.hk.nodup,lodcolumn=1, ylab="LOD score - growth rate")
+summary(growth.rate.scanone.hk)
+
+# checked mr to see if much diff - qualitatively the same
+# growth.rate.scanone.mr <- scanone(Costus, method="mr", pheno.col = "GR_cm.dy", addcovar=covariates_GR_select)
+# plot(growth.rate.scanone.mr,lodcolumn=1, ylab="LOD score - growth rate")
+# summary(growth.rate.scanone.mr)
+
+# run permutations
+growth.rate.perm.hk <- scanone(Costus_prob, method="hk", pheno.col ="GR_cm.dy", n.perm=1000, addcovar=covariates_GR_select)
+saveRDS(growth.rate.perm.hk, "growth.rate.scanone-hk_1kperm_251120.rds")
+#growth.rate.scanone.hk <- readRDS("growth.rate.scanone-hk_1kperm_251120.rds")
+
+# quick plot
+plot(growth.rate.perm.hk,lodcolumn=1, ylab="LOD score - growth rate")
+summary(growth.rate.scanone.hk, perms=growth.rate.perm.hk, alpha=0.1, pvalues=TRUE)
+#                  chr  pos  lod  pval
+# Chrom3_9524645     3 59.2 3.63 0.067
+# Chrom5_123010379   5 44.1 4.66 0.007
+
+# lod cutoffs
+summary(growth.rate.perm.hk,alpha=c(0.05, 0.1, 0.2))
+# LOD thresholds (1000 permutations)
+#      lod
+# 5%  3.81
+# 10% 3.43
+# 20% 3.04
+
+GR_10cutoff_lod = 3.43
+summary(growth.rate.scanone.hk[growth.rate.scanone.hk$lod > GR_10cutoff_lod,])
+write.table(summary(growth.rate.scanone.hk[growth.rate.scanone.hk$lod > GR_10cutoff_lod,]), "growth.rate_sig.peaks_scanone-hk_1kperm_251112.txt", quote = F)
+```
+#### plot
+```{r}
+#| label: Seed dormancy plot
+#| eval: false
+#| include: false
+pdf("./QTL_plots/growth.rate-qtl_251016.pdf",24,7)
+par(mar = c(5, 5, 4, 2))
+plot(growth.rate.scanone.hk,lodcolumn=1,
+     ylab="LOD score",
+     main = "growth rate",
+     cex.lab = 2,
+     cex.main = 2.5)
+abline(h=GR_10cutoff_lod, col="red", lwd=3)
+dev.off()
+```
+### Leaf thickness
+```{r}
+thickness.scanone.hk <- scanone(Costus_prob, method="hk", pheno.col = "ave_thick", addcovar=covariates_thick_select)
+# Dropping 44 individuals with missing phenotypes.
+plot(thickness.scanone.hk,lodcolumn=1, ylab="LOD score - leaf thickness")
+summary(thickness.scanone.hk)
+
+# generally no strong peaks, so seems more variable btw methods
+# aka different noise, not a difference in a significant peak... unless maybe on chr6? 
+
+thickness.scanone.mr <- scanone(Costus, method="mr", pheno.col = "ave_thick", addcovar=covariates_thick_select)
+plot(thickness.scanone.mr,lodcolumn=1, ylab="LOD score - leaf thickness")
+summary(thickness.scanone.mr)
+
+thickness.perm.hk <- scanone(Costus, method="hk", pheno.col ="ave_thick", n.perm=1000, addcovar=covariates_thick_select)
+# save permutations
+saveRDS(thickness.perm.hk, "thickness.scanone-hk_1kperm_251016.rds")
+thickness.perm.hk <- readRDS("thickness.scanone-hk_1kperm_251016.rds")
+plot(thickness.perm.hk,lodcolumn=1, ylab="LOD score - leaf thickness")
+summary(thickness.scanone.hk, perms=thickness.perm.hk, alpha=0.1, pvalues=TRUE)
+# No lOD peaks above threshold
+summary(thickness.perm.hk,alpha=c(0.05, 0.1, 0.2))
+# LOD thresholds (1000 permutations)
+# lod
+# 5%  3.84
+# 10% 3.42
+# 20% 3.05
+thick_10cutoff_lod = 3.42
+summary(thickness.scanone.hk[thickness.scanone.hk$lod > thick_10cutoff_lod,]) #NONE!
+
+# Try to see if the chr6 peak is significant with permutations of mr rather than hk:
+thickness.perm.mr <- scanone(Costus, method="mr", pheno.col ="ave_thick", n.perm=1000, addcovar=covariates_thick_select)
+# save permutations
+saveRDS(thickness.perm.mr, "thickness.scanone-mr_1kperm_251016.rds")
+plot(thickness.perm.mr,lodcolumn=1, ylab="LOD score - leaf thickness")
+summary(thickness.scanone.mr, perms=thickness.perm.mr, alpha=0.1, pvalues=TRUE)
+# No lOD peaks above threshold
+```
+####plot
+```{r}
+#| label: Seed dormancy plot
+#| eval: false
+#| include: false
+
+pdf("./QTL_plots/lf.thickness-qtl_251016.pdf",24,7)
+par(mar = c(5, 5, 4, 2))
+plot(thickness.scanone.hk,lodcolumn=1,
+     ylab="LOD score",
+     main = "leaf thickness",
+     cex.lab = 2,
+     cex.main = 2.5)
+abline(h=thick_10cutoff_lod, col="red", lwd=3)
+dev.off()
+```
+### Leaf toughness
+```{r}
+toughness.scanone.hk <- scanone(Costus_prob, method="hk", pheno.col = "ave_tough", addcovar=covariates_tough_select)
+#  Dropping 44 individuals with missing phenotypes.
+plot(toughness.scanone.hk,lodcolumn=1, ylab="LOD score - leaf toughness")
+summary(toughness.scanone.hk)
+
+# compare to mr - same sig peak on chr 3, but higher relative lod with mr
+toughness.scanone.mr <- scanone(Costus, method="mr", pheno.col = "ave_tough", addcovar=covariates_tough_select)
+#  Dropping 44 individuals with missing phenotypes.
+plot(toughness.scanone.mr,lodcolumn=1, ylab="LOD score - leaf toughness")
+summary(toughness.scanone.mr)
+
+# run permutations
+toughness.perm.hk <- scanone(Costus_prob, method="hk", pheno.col ="ave_tough", n.perm=1000, addcovar=covariates_tough_select)
+saveRDS(toughness.perm.hk, "toughness.scanone-hk_1kperm_251120.rds")
+toughness.perm.hk <- readRDS("toughness.scanone-hk_1kperm_251120.rds")
+
+plot(toughness.perm.hk,lodcolumn=1, ylab="LOD score - leaf toughness")
+summary(toughness.scanone.hk, perms=toughness.perm.hk, alpha=0.1, pvalues=TRUE)
+#                 chr  pos  lod pval
+# Chrom3_11474603   3 55.6 5.63    0
+
+summary(toughness.perm.hk,alpha=c(0.05, 0.1, 0.2))
+# LOD thresholds (1000 permutations)
+#      lod
+# 5%  3.72
+# 10% 3.39
+# 20% 3.00
+
+tough_10cutoff_lod = 3.39
+summary(toughness.scanone.hk[toughness.scanone.hk$lod > tough_10cutoff_lod,])
+write.table(summary(toughness.scanone.hk[toughness.scanone.hk$lod > tough_10cutoff_lod,]), "leaf.toughness_sig.peaks_scanone-hk_1kperm_251121.txt", quote = F)
+```
+#### plot
+```{r}
+#| label: Seed dormancy plot
+#| eval: false
+#| include: false
+
+pdf("./QTL_plots/lf.toughness-qtl.pdf",24,7)
+par(mar = c(5, 5, 4, 2))
+plot(toughness.scanone.hk,lodcolumn=1, 
+     ylab="LOD score",
+     main = "leaf toughness",
+     cex.lab = 3,
+     cex.main = 2.5)
+abline(h=tough_10cutoff_lod, col="red", lwd=3)
+dev.off()
+```
+### Percent N reabsorbed during drought
+```{r}
+Nreabs.scanone.hk <- scanone(Costus_prob, method="hk", pheno.col = "N_reabsorp", addcovar=covariates_Nreabs_select)
+# Dropping 45 individuals with missing phenotypes.
+plot(Nreabs.scanone.hk,lodcolumn=1, ylab="LOD score - %N reabsorbed in drought")
+summary(Nreabs.scanone.hk)
+
+# again no diff in sig peaks
+Nreabs.scanone.mr <- scanone(Costus, method="mr", pheno.col = "N_reabsorp", addcovar=covariates_Nreabs_select)
+plot(Nreabs.scanone.mr,lodcolumn=1, ylab="LOD score - %N reabsorbed in drought")
+summary(Nreabs.scanone.mr)
+
+# permutations
+Nreabs.perm.hk <- scanone(Costus_prob, method="hk", pheno.col ="N_reabsorp", n.perm=1000, addcovar=covariates_Nreabs_select) 
+saveRDS(Nreabs.perm.hk, "Nreabs.scanone-hk_1kperm_251016.rds")
+Nreabs.perm.hk <- readRDS("Nreabs.scanone-hk_1kperm_251016.rds")
+
+
+plot(Nreabs.perm.hk,lodcolumn=1, ylab="LOD score - leaf N reabsorption")
+summary(Nreabs.scanone.hk, perms=Nreabs.perm.hk, alpha=0.1, pvalues=TRUE)
+#                 chr  pos  lod  pval
+# Chrom1_12280628   1 27.1 5.55 0.002
+
+# lod cutoffs
+summary(Nreabs.perm.hk,alpha=c(0.05, 0.1, 0.2))
+# LOD thresholds (1000 permutations)
+#      lod
+# 5%  3.82
+# 10% 3.42
+# 20% 2.99
+Nreabs_10cutoff_lod =3.42
+summary(Nreabs.scanone.hk[Nreabs.scanone.hk$lod > Nreabs_10cutoff_lod,])
+write.table(summary(Nreabs.scanone.hk[Nreabs.scanone.hk$lod > Nreabs_10cutoff_lod,]), "N.reabsorption_sig.peaks_scanone-hk_1kperm_251121.txt", quote = F)
+```
+#### plot
+```{r}
+#| label: Seed dormancy plot
+#| eval: false
+#| include: false
+
+pdf("./QTL_plots/Nreabs-qtl.pdf",24,7)
+par(mar = c(5, 5, 4, 2))
+plot(Nreabs.scanone.hk,lodcolumn=1, 
+     ylab="LOD score",
+     main = "% leaf nitrogen reabsorption",
+     cex.lab = 2,
+     cex.main = 2.5)
+abline(h=Nreabs_10cutoff_lod, col="red", lwd=3)
+dev.off()
+```
+### Percent chlorophyll reabsorbed during drought ####
+```{r}
+Chlreabs.scanone.hk <- scanone(Costus_prob, method="hk", pheno.col = "chloro_reabsorp", addcovar=covariates_Chlreabs_select)
+#  Dropping 12 individuals with missing phenotypes.
+plot(Chlreabs.scanone.hk,lodcolumn=1, ylab="LOD score - Chlorophyll reabsorbed in drought")
+summary(Chlreabs.scanone.hk)
+
+# checking mr method - no big diff in sig peaks, but position is different by almost 50k bp (Chrom1_1567380 with mr v Chrom1_1615522 with hk)
+Chlreabs.scanone.mr <- scanone(Costus, method="mr", pheno.col = "chloro_reabsorp", addcovar=covariates_Chlreabs_select)
+plot(Chlreabs.scanone.mr,lodcolumn=1, ylab="LOD score - Chlorophyll reabsorbed in drought")
+summary(Chlreabs.scanone.mr)
+
+# run permutations
+Chlreabs.perm.hk <- scanone(Costus_prob, method="hk", pheno.col ="chloro_reabsorp", n.perm=1000, addcovar=covariates_Chlreabs_select)
+saveRDS(Chlreabs.perm.hk, "Chlreabs.scanone-hk_1kperm_251121.rds")
+#Chlreabs.perm.hk <- readRDS("Chlreabs.scanone-hk_1kperm_251121.rds")
+plot(Chlreabs.perm.hk,lodcolumn=1, ylab="LOD score - leaf Chlorophyll reabsorption")
+summary(Chlreabs.scanone.hk, perms=Chlreabs.perm.hk, alpha=0.1, pvalues=TRUE)
+#                chr  pos  lod pval
+# Chrom1_1615522   1 4.14 7.81    0
+
+# lod cutoffs
+summary(Chlreabs.perm.hk,alpha=c(0.05, 0.1, 0.2))
+# LOD thresholds (1000 permutations)
+#      lod
+# 5%  3.80
+# 10% 3.38
+# 20% 2.96
+
+Chlreabs_10cutoff_lod = 3.38
+summary(Chlreabs.scanone.hk[Chlreabs.scanone.hk$lod > Chlreabs_10cutoff_lod,])
+write.table(summary(Chlreabs.scanone.hk[Chlreabs.scanone.hk$lod > Chlreabs_10cutoff_lod,]), "chloro.reabsorption_sig.peaks_scanone-hk_1kperm_251122.txt", quote = F)
+```
+#### plot
+```{r}
+#| label: Seed dormancy plot
+#| eval: false
+#| include: false
+
+pdf("./QTL_plots/Chlreabs-qtl_1kperm_251016.pdf",24,7)
+par(mar = c(5, 5, 4, 2))
+plot(Chlreabs.scanone.hk,lodcolumn=1, 
+     ylab="LOD score",
+     main = "% chlorophyll reabsorption",
+     cex.lab = 2,
+     cex.main = 2.5)
+abline(h=Chlreabs_10cutoff_lod, col="red", lwd=3)
+dev.off()
+```
+### plot all
+```{r}
+# make helper function for plotting 
+make_scanone_plot <- function(scanone_obj, cutoff, title) {
+  # force immediate calling of the variables to prevent plot indexing issues
+  force(scanone_obj)
+  force(cutoff)
+  force(title)
+
+  function() {
+    plot(
+      scanone_obj, lodcolumn = 1,
+      ylab = "LOD score",
+      main = title,
+      cex.lab = 1.8,
+      cex.main = 2.2
+    )
+    abline(h = cutoff, col = "red", lwd = 3)
+  }
+}
+
+# call function for each trait to make a plot list
+plots <- list(
+  seed_dormancy      = make_scanone_plot(seed.dormancy.scanone.hk, SD_10cutoff_lod, "seed dormancy"),
+  growth_rate        = make_scanone_plot(growth.rate.scanone.hk, GR_10cutoff_lod, "growth rate"),
+  leaf_thickness     = make_scanone_plot(thickness.scanone.hk, thick_10cutoff_lod, "leaf thickness"),
+  leaf_toughness     = make_scanone_plot(toughness.scanone.hk, tough_10cutoff_lod, "leaf toughness"),
+  N_reabs            = make_scanone_plot(Nreabs.scanone.hk, Nreabs_10cutoff_lod, "% leaf nitrogen reabsorption"),
+  Chl_reabs          = make_scanone_plot(Chlreabs.scanone.hk, Chlreabs_10cutoff_lod, "% chlorophyll reabsorption")
+)
+
+# plot all as pdf
+pdf("./QTL_plots/all_qtl_251130.pdf", width = 20, height = 9)
+
+par(mfrow = c(3, 2), mar = c(5, 5, 4, 2))
+
+for (f in plots) {
+  f()   # call each plotting function
+}
+
+dev.off()
+
+```
+
+## 1st models
+### Seed dormancy
+```{r}
+# create QTL object with both loci
+# using peaks from log_SD scanone perms
+# what="prob" will out the QTL genotype probabilities for use in HK regression
+SD.qtl <- makeqtl(Costus_prob, chr=c("2","4","6"), pos=c(68.577962, 25.3, 55.490804), what="prob")
+SD.rqtl <- refineqtl(Costus_prob, pheno.col="log_days_to_radicle", covar=covariates_SD_select, qtl=SD.qtl, method="hk", maxit=10, maxit.fitqtl=1000)
+# determine whether interactions are significant - NO they aren't
+SD.out.fqi <- fitqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=SD.rqtl, method="hk", get.ests=TRUE, covar=covariates_SD_select, formula=y~Q1*Q2*Q3 +s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15)
+summary(SD.out.fqi)
+
+SD.out.fq <- fitqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=SD.rqtl, method="hk", get.ests=TRUE, covar=covariates_SD_select, formula=y~Q1+Q2+Q3+Q1:Q2 +s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15)
+summary(SD.out.fq)
+
+SD.out.fq <- fitqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=SD.rqtl, method="hk", get.ests=TRUE, covar=covariates_SD_select, formula=y~Q1+Q2+Q3 +s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15)
+summary(SD.out.fq)
+
+######### old "mr" run ####
+# mr method - very similar to hk, so going with hk
+# seed.dormancy.scanone.mr_no.fam <- scanone(Costus, method="mr", pheno.col = "days_to_radicle", addcovar=covariates_SD_select)
+# plot(seed.dormancy.scanone.mr_no.fam,lodcolumn=1, ylab="LOD score - seed dormancy")
+# summary(seed.dormancy.scanone.mr_no.fam)
+# 
+# seed.dormancy.perm.mr_no.fam <- scanone(Costus, method="mr", pheno.col ="days_to_radicle", n.perm=1000, addcovar=covariates_SD_select)
+# first need to run # First, because actually F3 data and calc.genoprob (required by 'hk' method) 
+# operates on assumption of F2s, will try simple marker regression with the 
+
+### Remove this now bc hk is very similar and probably a better imputation; also keep mr bc different
+# # raw genotype calls from aHMM -> "mr-argmax" (argmax means impute w/ Viterbi algorithm)
+# seed.dormancy.scanone.mr_argmax <- scanone(Costus, method="mr-argmax", pheno.col = "days_to_radicle", addcovar=covariates_SD_select)
+# #  Dropping 8 individuals with missing phenotypes.
+# # addcovar appears to be over-specified; consider dropping columns.
+# # [ONLY an error when include family in covars] - still including for now, need to compare results and see
+# plot(seed.dormancy.scanone.mr_argmax,lodcolumn=1, ylab="LOD score - seed dormancy")
+# summary(seed.dormancy.scanone.mr_argmax)
+
+# mr method - very similar to hk, so going with hk
+# seed.dormancy.scanone.mr_no.fam <- scanone(Costus, method="mr", pheno.col = "days_to_radicle", addcovar=covariates_SD_select)
+# plot(seed.dormancy.scanone.mr_no.fam,lodcolumn=1, ylab="LOD score - seed dormancy")
+# summary(seed.dormancy.scanone.mr_no.fam)
+# 
+# seed.dormancy.perm.mr_no.fam <- scanone(Costus, method="mr", pheno.col ="days_to_radicle", n.perm=1000, addcovar=covariates_SD_select)
+
+```
+### Growth rate
+```{r}
+# create QTL object with both loci
+# what="prob" will out the QTL genotype probabilities for use in HK regression
+GR.qtl <- makeqtl(Costus_prob, chr=c("3","5"), pos=c(59.205329,44.088179), what="prob")
+
+GR.rqtl <- refineqtl(Costus_prob, pheno.col = "GR_cm.dy", qtl=GR.qtl, covar=covariates_GR_select, method="hk", maxit=10, maxit.fitqtl=1000)
+
+# fit the two locus additive model
+# “drop one term at a time” table compares the fit of the two-QTL model to the reduced model where one QTL is omitted.
+GR.out.fq <- fitqtl(Costus_prob, pheno.col="GR_cm.dy", qtl=GR.rqtl, method="hk", get.ests=TRUE, covar=covariates_GR_select, formula = y~Q1+Q2 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh7 + coh10 + coh11 + coh13 + coh18 + coh19 + coh24 + coh25 + coh27 + coh28 + coh29 + coh30 + coh31 + coh32 + coh34)
+summary(GR.out.fq)
+
+# no significant interaction
+# # determine whether there is an interaction between the two QTL by fitting the model with the interaction
+# GR.out.fqi <- fitqtl(Costus_prob, pheno.col="GR_cm.dy", qtl=GR.rqtl, method="hk", get.ests=TRUE, covar=covariates_GR_select, formula = y~Q1+Q2+Q1:Q2 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh7 + coh10 + coh11 + coh13 + coh18 + coh19 + coh24 + coh25 + coh27 + coh28 + coh29 + coh30 + coh31 + coh32 + coh34)
+# summary(GR.out.fqi)
+```
+### Leaf toughness
+```{r}
+# create QTL object
+# what="prob" will out the QTL genotype probabilities for use in HK regression
+tough.qtl <- makeqtl(Costus_prob, chr="3", pos=55.604166, what="prob")
+
+# fit qtl model
+# “drop one term at a time” table compares the fit of the two-QTL model to the reduced model where one QTL is omitted.
+tough.out.fq <- fitqtl(Costus_prob, pheno.col="ave_tough", qtl=tough.qtl, method="hk", get.ests=TRUE, covar=covariates_tough_select, formula=y~Q1 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh10 + coh11 + coh16 + coh19 + coh22 + coh24 + coh27 + coh28 + coh29 + coh30 + coh32)
+summary(tough.out.fq)
+```
+### N reabsorbed
+```{r}
+# create QTL object
+# what="prob" will out the QTL genotype probabilities for use in HK regression
+Nreabs.qtl <- makeqtl(Costus_prob, chr="1", pos=27.091018, what="prob")
+
+# fit the two locus additive model
+# “drop one term at a time” table compares the fit of the two-QTL model to the reduced model where one QTL is omitted.
+Nreabs.out.fq <- fitqtl(Costus_prob, pheno.col="N_reabsorp", qtl=Nreabs.qtl, method="hk", get.ests=TRUE, covar=covariates_Nreabs_select, formula=y~Q1 + hybrid_index + F21_238 + F21_259 + F21_284 + 
+    F21_232 + coh10 + coh16 + coh18 + coh21 + coh22 + coh24 + 
+    coh25 + coh27 + coh29 + coh30 + coh32 + coh34)
+summary(Nreabs.out.fq)
+```
+###chlorophyll reabsorbed
+```{r}
+# create QTL object 
+Chlreabs.qtl <- makeqtl(Costus_prob, chr="1", pos=4.14, what="prob")
+
+# refine QTL with larger cross object
+Chlreabs.rqtl <- refineqtl(Costus_prob, pheno.col = "chloro_reabsorp", qtl=Chlreabs.qtl, covar=covariates_Chlreabs_select, method="hk", maxit=10, maxit.fitqtl=1000)
+
+# fit the model
+Chlreabs.out.fq <- fitqtl(Costus_prob, pheno.col="chloro_reabsorp", qtl=Chlreabs.rqtl, method="hk", get.ests=TRUE, covar=covariates_Chlreabs_select, formula=y~Q1 + hybrid_index +  F21_238 + F21_284 + F21_232 + coh13 + coh16 + coh19 + coh21 + coh22 + coh24 + coh25 + coh27 + coh28 + coh30 + coh31 + coh32)
+summary(Chlreabs.out.fq)
+
+# # refine the qtl positions
+# # each QTL is moved to the position giving the highest likelihood,
+# # and the entire process is repeated until no further improvement in likelihood can be obtained
+# rqtl <- refineqtl(Costus_prob, pheno.col="days_to_radicle", qtl=qtl, method="hk")
+# rqtl
+# #       name chr     pos n.gen
+# # Q1  2@23.8   2  23.809     3
+# # Q2 6@118.2   6 118.165     3
+# 
+# # look for additional qtl, using the refined qtl positions
+# out.aq_2qtl <- addqtl(Costus_prob, pheno.col="days_to_radicle", qtl=rqtl, method="hk", covar=covariates_SD_select, formula=y~Q1+Q2+Q1:Q2 + hybrid_index + F21_259 + F21_241)
+# 
+# plot(out.aq_2qtl)
+# summary(out.aq_2qtl)
+# out.aq_2qtl[out.aq_2qtl$lod > 3,] #terrible cutoff for me... need something way higher but need to figure out how... 
+```
+## Multi-QTL models
+### calc.genoprob
+```{r}
+# calculate genotype probabilities
+Costus_prob <- calc.genoprob(Costus)
+saveRDS(Costus_prob,file="aHMM_251111_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_more_dups_genoprob.rds") 
+Costus_prob <- readRDS(file="./aHMM_251111_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_most_dups_genoprob.rds")
+
+dup <- findDupMarkers(Costus_prob, exact.only=FALSE, adjacent.only=FALSE) 
+Costus_w.o_dups <- drop.markers(Costus_prob, unlist(dup)) 
+    # Total markers:      4013 
+    # No. markers:        414 592 432 289 569 447 406 514 350 
+    # Percent genotyped:  95.9 
+saveRDS(Costus_w.o_dups,file="aHMM_251111_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_least_dups_genoprob.rds") 
+```
+### Seed dormancy
+```{r}
+# below permutations generated from a cross that has fewer markers (second round of more stringent dup removal) than in final fitqtl models - should check and see if results of final model are much different when using the different cross objects/markers:
+Costus_sml <- readRDS(file = "./aHMM_251111_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_least_dups_est.rf.rds")
+# Pre-calculate genotype probabilities with step of 5 to make it possible to run 
+Costus_sml <- calc.genoprob(Costus, step = 5, error.prob = 0.01)
+
+# read in scantwo perms generated with above smaller cross on HPC 
+SD.scantwo.hk.perm <- readRDS(file = "./scantwo.perms/SD.scantwo.hk.perm.rds")
+# plot(SD.scantwo.hk.perm)
+#calculate penalties to be used in stepwiseqtl based on scantwo permutations
+SD_pen <- calc.penalties(SD.scantwo.hk.perm, alpha = 0.05)
+#     main    heavy    light 
+# 3.279993 5.715275 3.316932 
+
+#stepwiseqtl: Stepwise selection for multiple QTL - here use same cross object as that used for penalty calculation. once model is selected use with larger cross object (higher resolution)
+SD.step.qtl <- stepwiseqtl(Costus_sml, pheno.col = "log_days_to_radicle", method = "hk", model = "normal", covar=covariates_SD_select, penalties = SD_pen, max.qtl = 3, keeplodprofile = TRUE, verbose = TRUE, refine.locations = TRUE)
+summary(SD.step.qtl)
+# took a while to run:
+#   QTL object containing genotype probabilities. 
+# 
+#      name chr    pos n.gen
+# Q1 2@68.6   2 68.578     3
+# Q2 6@55.5   6 55.491     3
+# 
+#   Formula: y ~ s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + 
+#                 s.coh15 + Q1 + Q2 
+# 
+#   pLOD:  21.163 
+# refine QTL for larger cross object
+SD.rqtl <- refineqtl(Costus_prob, pheno.col="log_days_to_radicle", covar=covariates_SD_select, qtl=SD.step.qtl, method="hk", maxit=10, maxit.fitqtl=1000)
+
+#fitqtl: Fit a multiple QTL model
+seed.dormancy.fit <- fitqtl(Costus_prob, pheno.col = "log_days_to_radicle", method = "hk", model = "normal", covar=covariates_SD_select, get.ests = TRUE, qtl = SD.rqtl, formula = attr(SD.step.qtl,"formula"), dropone = TRUE)
+summary(seed.dormancy.fit)
+
+##### first attempt stepwise auto select w default penalties ####
+###########################################
+## Testing the automated stepwiseqtl fn:
+
+# scantwo quick check of chr6
+SD.scantwo.hk.chr3 <- scantwo(Costus_prob, chr=6, pheno.col = "log_days_to_radicle",  method="hk", addcovar=covariates_SD_select)
+summary(SD.scantwo.hk.chr3)
+# It is the same peak/1 peak. There is also an interaction thing with 5 and 10 cM positions...? 
+# do some permuatation
+SD.scantwo.hk <- scantwo(Costus_prob, pheno.col = "log_days_to_radicle",  method="hk", n.perm=10, addcovar=covariates_SD_select)
+summary(SD.scantwo.hk)
+#calculate penalties to be used in stepwiseqtl based on scantwo permutations
+seed.dormancy_penalties <- calc.penalties(SD.scantwo.hk, alpha = 0.05)
+
+stepfit <- stepwiseqtl(Costus_prob, pheno.col="log_days_to_radicle",
+                       method = "hk", covar=covariates_SD_select, additive.only = FALSE, max.qtl = 5)
+summary(stepfit)
+# Picks up different things, but actually think this is probably best bc more closely atches scanone plot in that chr4 peak is next highest, the chr3 peak I got with addqtl is much lower, though potentially still 'real'
+
+# trying built in model selection 
+step_SD <- fitqtl(Costus_prob, qtl = stepfit, pheno.col = "log_days_to_radicle",
+              method = "hk", get.ests=TRUE, formula = y ~ + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15 + Q1 + Q2 + Q3 + Q1:Q2 , covar = covariates_SD_select)
+summary(step_SD)
+
+SD.4.qtl <- makeqtl(Costus_prob, chr=c("2","4","6","3"), pos=c(68.577962,33.202, 55.490804,21.44), what="prob")
+# see about adding the peak from chr 3 id with inital addqtl run above:
+step_SD_plus <- fitqtl(Costus_prob, qtl = SD.4.qtl, pheno.col = "log_days_to_radicle",
+              method = "hk", get.ests=TRUE, formula = y ~ + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15 + Q1 + Q2 + Q3 + Q4 + Q1:Q2 , covar = covariates_SD_select)
+summary(step_SD_plus) 
+
+# annoyingly, additional peak also significant... tough to know why not included by the automatic model selection...??? 
+
+
+
+
+
+######## OLD MANUAL WAY ##############
+# First, refine QTL locations 
+# define initial QTL positions
+SD.qtl <- makeqtl(Costus_prob, chr=c("2","4","6"), pos=c(68.577962, 25.3, 55.490804), what="prob")
+
+# # refine the qtl positions
+# each QTL is moved to the position giving the highest likelihood,
+# and the entire process is repeated until no further improvement in likelihood can be obtained
+# starting with defaults, maxit.fitqtl = 1k iterations, maxit =10 iterations, but should maybe do more, like maybe 5-10k if slow maybe finally time to transfer to HPC...
+SD.rqtl <- refineqtl(Costus_prob, pheno.col="log_days_to_radicle", covar=covariates_SD_select, qtl=SD.qtl, formula=y~Q1+Q2+Q3 + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15, method="hk", maxit=10, maxit.fitqtl=1000)
+# no matter how I run it, only runs one iteration bc already at optimal location      name chr    pos n.gen
+# Q1 2@68.6   2 68.578     3
+# Q2 6@55.5   6 55.491     3
+
+# look for additional qtl, using the refined qtl positions
+SD.rqtl_aq_2qtl <- addqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=SD.rqtl, method="hk", covar=covariates_SD_select, formula=y ~ Q1 + Q2 + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15)
+
+plot(SD.rqtl_aq_2qtl)
+summary(SD.rqtl_aq_2qtl)
+# highest (CLEARLY)
+# Chrom6_119185681   6 55.49 20.67
+# same as existing peak... strange... 
+# could probs interpret as meaning I shouldn't try adding another. 
+
+# re-run fitqtl with additional QTL peak
+SD.3.qtl <- makeqtl(Costus_prob, chr=c("2","3","6"), pos=c(68.577962, 21.44, 55.490804), what="prob")
+# re-run fitqtl with additional QTL peak
+SD.3.rqtl <- refineqtl(Costus_prob, pheno.col="log_days_to_radicle", covar=covariates_SD_select, qtl=SD.3.qtl, formula=y~Q1+Q2+Q3 + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15, method="hk", maxit=10, maxit.fitqtl=1000)
+
+# fit the model
+# “drop one term at a time” table compares the fit of the two-QTL model to the reduced model where one QTL is omitted.
+# full_SD.out.3.qtl.fq <- fitqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=SD.3.rqtl, method="hk", get.ests=TRUE, covar=covariates_SD_select, formula=y~Q1+Q2+Q3+Q1:Q2+Q1:Q3+Q3:Q2 + hybrid_index + s.coh4 + s.coh7 + s.coh8 + s.coh15)
+# summary(full_SD.out.3.qtl.fq)
+# removed Q1:Q2 bc not significant interaction
+red_SD.out.3.qtl.fq <- fitqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=SD.3.rqtl, method="hk", get.ests=TRUE, covar=covariates_SD_select, formula=y~Q1+Q2+Q3+Q1:Q3+Q3:Q2 + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15)
+summary(red_SD.out.3.qtl.fq)
+# additional QTL IS significant! no sig interactions, so remove from future models
+
+## ORPHAN - checking with and without interaction lods... just exclude if they aren't significant ##
+# # compare models with and without Q1:Q2 interaaction
+# # A smidge less var explained by reduced model 40.8 -> 40.0 (0.87%)
+# # change in significance levels of other interactions: Q1:Q3 0.015 -> 0.053; Q2:Q3 0.037 -> 0.016 
+# full_SD.out.3.qtl.fq$result.full
+# red_SD.out.3.qtl.fq$result.full
+# # model LOD full -> reduced is 42.98 -> 41.78 (small diff of ~1.2)
+# # keeping reduced model - greater power, easiser interpretation, and little gain in the more complex model
+
+# additional peak was significant, run addqtl again with new peak included in base model
+
+# look for additional qtl, using the refined qtl positions
+#including the significant interactions between Q3 and the original 2
+SD.rqtl_aq_3qtl <- addqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=SD.3.rqtl, method="hk", covar=covariates_SD_select, formula=y~Q1+Q2+Q3 + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15)
+
+plot(SD.rqtl_aq_3qtl)
+summary(SD.rqtl_aq_3qtl)
+# highest (barely, one on chr3 lod = 2.145:
+# Chrom3_122139509   3  3.02 2.271
+SD.rqtl_aq_3qtl[SD.rqtl_aq_3qtl$lod > 2.27,]
+# pos 3.023165
+
+# add qtl and refine postion
+SD.4.qtl <- makeqtl(Costus_prob, chr=c("2","3","6","7"), pos=c(68.577962, 3.023165, 55.490804, 81.056130), what="prob")
+SD.4.rqtl <- refineqtl(Costus_prob, pheno.col="log_days_to_radicle", covar=covariates_SD_select, qtl=SD.4.qtl, formula=y~Q1+Q2+Q3+Q4 + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15, method="hk", maxit=10, maxit.fitqtl=1000)
+
+# re-run fitqtl with additional QTL peak
+SD.out.4.qtl.fq <- fitqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=SD.4.rqtl, method="hk", get.ests=TRUE, covar=covariates_SD_select, formula=y~Q1+Q2+Q3+Q4 + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15)
+# formula based on what was selected in model selection above
+summary(SD.out.4.qtl.fq)
+
+# interactions not significant. removing and re running (new qtl was 0.09 pval)
+# additional peak significant! now chrom 7 peak weak
+# run it again!
+
+# look for additional qtl, using the refined qtl positions
+#including the significant interactions between Q3 and the original 2
+SD.rqtl_aq_4qtl <- addqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=SD.4.rqtl, method="hk", covar=covariates_SD_select, formula=y~Q1+Q2+Q3 +Q4+ s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15)
+
+plot(SD.rqtl_aq_4qtl)
+summary(SD.rqtl_aq_4qtl)
+# highest CLEARLY
+# Chrom7_79073684    7 30.44 5.738
+SD.rqtl_aq_4qtl[SD.rqtl_aq_4qtl$lod > 5.73,]
+# pos 30.43919
+
+# add qtl and refine postion
+SD.5.qtl <- makeqtl(Costus_prob, chr=c("2","3","6","7","7"), pos=c(68.577962, 3.023165, 55.490804, 81.056130,30.43919), what="prob")
+SD.5.rqtl <- refineqtl(Costus_prob, pheno.col="log_days_to_radicle", covar=covariates_SD_select, qtl=SD.5.qtl, formula=y~Q1+Q2+Q3+Q4+Q5 + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15, method="hk", maxit=10, maxit.fitqtl=1000)
+
+# re-run fitqtl with additional QTL peak
+SD.out.5.qtl.fq <- fitqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=SD.5.rqtl, method="hk", get.ests=TRUE, covar=covariates_SD_select, formula=y~Q1+Q2+Q3+Q4+Q5 + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15)
+# formula based on what was selected in model selection above
+summary(SD.out.5.qtl.fq)
+
+
+# look for additional qtl, using the refined qtl positions
+#including the significant interactions between Q3 and the original 2
+SD.rqtl_aq_5qtl <- addqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=SD.5.rqtl, method="hk", covar=covariates_SD_select, formula=y~Q1+Q2+Q3 +Q4+Q5 + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15)
+
+plot(SD.rqtl_aq_5qtl)
+summary(SD.rqtl_aq_5qtl)
+# highest CLEARLY
+# Chrom7_79073684    7 30.44 5.738
+SD.rqtl_aq_4qtl[SD.rqtl_aq_4qtl$lod > 5.73,]
+# pos 30.43919
+
+# add qtl and refine postion
+SD.5.qtl <- makeqtl(Costus_prob, chr=c("2","3","6","7","7"), pos=c(68.577962, 3.023165, 55.490804, 81.056130,30.43919), what="prob")
+SD.5.rqtl <- refineqtl(Costus_prob, pheno.col="log_days_to_radicle", covar=covariates_SD_select, qtl=SD.5.qtl, formula=y~Q1+Q2+Q3+Q4+Q5 + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15, method="hk", maxit=10, maxit.fitqtl=1000)
+
+# re-run fitqtl with additional QTL peak
+SD.out.5.qtl.fq <- fitqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=SD.5.rqtl, method="hk", get.ests=TRUE, covar=covariates_SD_select, formula=y~Q1+Q2+Q3+Q4+Q5 + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15)
+# formula based on what was selected in model selection above
+summary(SD.out.5.qtl.fq)
+
+
+
+## BEFORE USING stepwise QTL, should calculate penalties and add that argument
+SD_scantwo_perms <- scantwo(Costus_prob, pheno.col="log_days_to_radicle", method="hk", get.ests=TRUE, covar=covariates_SD_select)
+pen <- calc.penalties()
+
+# might need to do this with an array and one chromosome at a time... use chr = argument
+
+```
+### Growth rate
+```{r}
+## stepwiseqtl model selection based on permutations of scantwo run on HPC; see seed dormancy for cross object info - different cross object (smaller, fewer dups and step of 5) to calc penalties with scantwo
+# read in scantwo perms generated with above smaller cross on HPC 
+GR.scantwo.hk.perm <- readRDS(file = "./scantwo.perms/GR.scantwo.hk.perm.rds")
+#calculate penalties to be used in stepwiseqtl based on scantwo permutations
+GR_pen <- calc.penalties(GR.scantwo.hk.perm, alpha = 0.1)
+# PICKUP - peak at alpha 0.07 to see if additional QTL from before gets included
+#     main    heavy    light 
+# 3.279993 5.715275 3.316932 
+
+#stepwiseqtl: Stepwise selection for multiple QTL
+GR.step.qtl <- stepwiseqtl(Costus_sml, pheno.col = "GR_cm.dy", method = "hk", model = "normal", covar=covariates_GR_select, penalties = GR_pen, max.qtl = 3, keeplodprofile = TRUE, verbose = TRUE, refine.locations = TRUE)
+summary(GR.step.qtl)
+
+# refine QTL for larger cross object
+GR.rqtl <- refineqtl(Costus_prob, pheno.col = "GR_cm.dy", qtl=GR.step.qtl, covar=covariates_GR_select, method="hk", maxit=10, maxit.fitqtl=1000)
+
+#fitqtl: Fit a multiple QTL model
+GR.fit <- fitqtl(Costus_prob, pheno.col = "GR_cm.dy", method = "hk", model = "normal", covar=covariates_GR_select, get.ests = TRUE, qtl = GR.rqtl, formula = attr(GR.step.qtl,"formula"), dropone = TRUE)
+summary(GR.fit)
+
+
+# # First, refine QTL locations 
+# # define initial QTL positions
+# GR.qtl <- makeqtl(Costus_prob, chr=c("3","5"), pos=c(59.205329,44.088179), what="prob")
+# # # refine the qtl positions
+# # each QTL is moved to the position giving the highest likelihood,
+# # and the entire process is repeated until no further improvement in likelihood can be obtained
+# # starting with defaults, maxit.fitqtl = 1k iterations, maxit =10 iterations, but should maybe do more, like maybe 5-10k if slow maybe finally time to transfer to HPC...
+# GR.rqtl <- refineqtl(Costus_prob, pheno.col = "GR_cm.dy", qtl=GR.qtl, covar=covariates_GR_select, method="hk", maxit=10, maxit.fitqtl=1000)
+# # runs multiple iterations - but just 2 - doesn't change anything
+# 
+# # look for additional qtl, using the refined qtl positions
+# GR.rqtl_aq_2qtl <- addqtl(Costus_prob, pheno.col="log_days_to_radicle", qtl=GR.rqtl, method="hk", covar=covariates_GR_select, formula=y~Q1+Q2+hybrid_index+F21_238+F21_259+F21_284+F21_232+coh7+coh10+coh11+coh13+coh16+coh18+coh19+coh24+coh25+coh27+coh28+coh29+coh30+coh31+coh32+coh34)
+# 
+# plot(GR.rqtl_aq_2qtl)
+# summary(GR.rqtl_aq_2qtl)
+# # highest:
+# # Chrom6_117463277   6 54.640 8.259
+# summary(GR.rqtl_aq_2qtl[GR.rqtl_aq_2qtl$lod > 8,])
+# 
+# # re-run fitqtl with additional QTL peak
+# GR.3.qtl <- makeqtl(Costus_prob, chr=c("3","5","6"), pos=c(59.205329,44.088179,54.63977), what="prob")                              
+# 
+# # fit the model
+# GR.out.3.qtl.fq <- fitqtl(Costus_prob, pheno.col="GR_cm.dy", qtl=GR.qtl, method="hk", get.ests=TRUE, covar=covariates_GR_select, formula = y~Q1+Q2+Q3+Q1:Q2+Q1:Q3+Q3:Q2 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh7 + coh10 + coh11 + coh13 + coh18 + coh19 + coh24 + coh25 + coh27 + coh28 + coh29 + coh30 + coh31 + coh32 + coh34)
+# summary(GR.out.3.qtl.fq)
+
+# additional peak was insignificant
+# none of the interactions significant
+# original 2 QTL model is final model
+
+## BEFORE USING stepwise QTL, should calculate penalties and add that argument
+GR_scantwo_perms <- 
+pen <- calc.penalties()
+## Testing the automated stepwiseqtl fn:
+stepfit_GR <- stepwiseqtl(Costus_prob, pheno.col="GR_cm.dy",
+                       method = "hk", penalties = pen, covar=covariates_GR_select, additive.only = FALSE, max.qtl = 5)
+summary(stepfit_GR)
+summary(stepfit)
+# Picks up different things, but actually think this is probably best bc more closely atches scanone plot in that chr4 peak is next highest, the chr3 peak I got with addqtl is much lower, though potentially still 'real'
+stepfit_GR <- stepwiseqtl(Costus_prob, pheno.col="GR_cm.dy",
+                       method = "hk", covar=covariates_GR_select, additive.only = FALSE, max.qtl = 5)
+summary(stepfit_GR)
+
+# trying built in model selection 
+step_GR <- fitqtl(Costus_prob, qtl = stepfit_GR, pheno.col = "log_days_to_radicle",
+              method = "hk", get.ests=TRUE, formula = y ~ + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15 + Q1 + Q2 + Q3 + Q1:Q2 , covar = covariates_SD_select)
+summary(step_GR)
+
+SD.4.qtl <- makeqtl(Costus_prob, chr=c("2","4","6","3"), pos=c(68.577962,33.202, 55.490804,21.44), what="prob")
+# see about adding the peak from chr 3 id with inital addqtl run above:
+step_SD_plus <- fitqtl(Costus_prob, qtl = SD.4.qtl, pheno.col = "log_days_to_radicle",
+              method = "hk", get.ests=TRUE, formula = y ~ + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15 + Q1 + Q2 + Q3 + Q4 + Q1:Q2 , covar = covariates_SD_select)
+summary(step_SD_plus) 
+```
+###Leaf toughness
+```{r}
+## stepwiseqtl model selection based on permutations of scantwo run on HPC; see seed dormancy for cross object info - different cross object (smaller, fewer dups and step of 5) to calc penalties with scantwo
+# read in scantwo perms generated with above smaller cross on HPC 
+tough.scantwo.hk.perm <- readRDS(file = "./scantwo.perms/tough.scantwo.hk.perm.rds")
+#calculate penalties to be used in stepwiseqtl based on scantwo permutations
+tough_pen <- calc.penalties(tough.scantwo.hk.perm, alpha = 0.05)
+#     main    heavy    light 
+# 3.279993 5.715275 3.316932 
+
+#stepwiseqtl: Stepwise selection for multiple QTL
+tough.step.qtl <- stepwiseqtl(Costus_sml, pheno.col = "ave_tough", method = "hk", model = "normal", covar=covariates_tough_select, penalties = tough_pen, max.qtl = 3, keeplodprofile = TRUE, verbose = TRUE, refine.locations = TRUE)
+summary(tough.step.qtl)
+# Model formula: y ~ hybrid_index + F21_232 + F21_238 + F21_259 + F21_284 + coh10 + coh11 + coh16 + coh19 +  coh22 + coh24 + coh27 + coh28 + coh29 + coh30 + coh32 + Q1 + Q2
+# refine position with larger costus object
+tough.rqtl <- refineqtl(Costus_prob, pheno.col = "ave_tough", qtl=tough.step.qtl, covar=covariates_tough_select, method="hk", maxit=10, maxit.fitqtl=1000)
+
+#fitqtl: Fit a multiple QTL model
+tough.fit <- fitqtl(Costus_prob, pheno.col = "ave_tough", method = "hk", model = "normal", covar=covariates_tough_select, get.ests = TRUE, qtl = tough.rqtl, formula = attr(tough.step.qtl,"formula"), dropone = TRUE)
+summary(tough.fit)
+
+# ## OLD addqtl stuff below #####
+# # First, refine QTL locations 
+# # define initial QTL positions
+# tough.qtl <- makeqtl(Costus_prob, chr="3", pos=55.604166, what="prob")
+# # refine the qtl positions
+# tough.rqtl <- refineqtl(Costus_prob, pheno.col = "ave_tough", qtl=tough.qtl, covar=covariates_tough_select, method="hk", maxit=10, maxit.fitqtl=1000)
+# # runs only one iteration, no change - slightly odd since addqtl tries to add a peak very nearby... Maybe run refine qtl again with 2nd peak before trying to add third! 
+# 
+# # look for additional qtl, using the refined qtl positions
+# tough.rqtl_aq_2qtl <- addqtl(Costus_prob, pheno.col="ave_tough", qtl=tough.rqtl, method="hk", covar=covariates_tough_select, formula=y~Q1 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh10 + coh11 + coh16 + coh19 + coh22 + coh24 + coh27 + coh28 + coh29 + coh30 + coh32)
+# 
+# plot(tough.rqtl_aq_2qtl)
+# summary(tough.rqtl_aq_2qtl)
+# # highest:
+# # Chrom8_8524965    8  14.9 3.912
+# # pos 14.88453
+# tough.rqtl_aq_2qtl[tough.rqtl_aq_2qtl$lod > 3.9,]
+# 
+# # re-run fitqtl with additional QTL peak
+# tough.2.qtl <- makeqtl(Costus_prob, chr=c("3","8"), pos=c(55.604166,14.88453), what="prob") 
+# # refine the qtl positions
+# tough.2.rqtl <- refineqtl(Costus_prob, pheno.col = "ave_tough", qtl=tough.2.qtl, covar=covariates_tough_select, method="hk", maxit=10, maxit.fitqtl=1000)
+# 
+# # fit the model
+# tough.out.2.qtl.fq <- fitqtl(Costus_prob, pheno.col="ave_tough", qtl=tough.2.rqtl, method="hk", get.ests=TRUE, covar=covariates_tough_select, formula=y~Q1+Q2+Q1:Q2 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh10 + coh11 + coh16 + coh19 + coh22 + coh24 + coh27 + coh28 + coh29 + coh30 + coh32)
+# summary(tough.out.2.qtl.fq)
+# 
+# # additional peak was significant, interaction was not. Drop interaction then run addqtl again with new peak
+# 
+# # re-run addqtl after adding peak and refining
+# tough.rqtl_aq_3qtl <- addqtl(Costus_prob, pheno.col="ave_tough", qtl=tough.2.rqtl, method="hk", covar=covariates_tough_select, formula=y~Q1 + Q2 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh10 + coh11 + coh16 + coh19 + coh22 + coh24 + coh27 + coh28 + coh29 + coh30 + coh32)
+# 
+# plot(tough.rqtl_aq_3qtl)
+# summary(tough.rqtl_aq_3qtl)
+# # highest (barely, one on chr5 and 2 with lod > 2)
+# # Chrom3_9850029     3 58.4 2.270
+# tough.rqtl_aq_3qtl[tough.rqtl_aq_3qtl$lod > 2.2,]
+# # pos 58.37430
+# 
+# # re-run fitqtl with additional QTL peak
+# tough.3.qtl <- makeqtl(Costus_prob, chr=c("3","8","3"), pos=c(55.46614,14.88453,58.37430), what="prob")
+# # refine peaks
+# tough.3.rqtl <- refineqtl(Costus_prob, pheno.col = "ave_tough", qtl=tough.3.qtl, covar=covariates_tough_select, method="hk", maxit=10, maxit.fitqtl=1000)
+# 
+# # fit the model 
+# # can't fit interaction between Q1:Q3 because too close together/not enough marker resolution between.. or something - makes "computationally singular" 
+# tough.out.3.qtl.fq <- fitqtl(Costus_prob, pheno.col="ave_tough", qtl=tough.3.rqtl, method="hk", get.ests=TRUE, covar=covariates_tough_select, formula=y~Q1+Q2+Q3+Q1:Q2 + Q2:Q3+ hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh10 + coh11 + coh16 + coh19 + coh22 + coh24 + coh27 + coh28 + coh29 + coh30 + coh32)
+# summary(tough.out.3.qtl.fq)
+# 
+# # quick check if genotype vectors at 2 chr3 positions are highly correlated (meaning I could not estimate separate effects)
+# m1 <- find.marker(Costus_prob, chr = 3, pos = 55.46614)
+# m2 <- find.marker(Costus_prob, chr = 3, pos = 58.37430)
+# # pull marker genotypes (matrix of individuals x markers)
+# geno <- pull.geno(Costus_prob)
+# 
+# g1 <- geno[, m1]
+# g2 <- geno[, m2]
+# 
+# # contingency table and simple numeric correlation
+# table(g1, g2)
+# cor(as.numeric(g1), as.numeric(g2), use = "complete.obs")
+# # 0.965
+# # Very few recombinants between the peaks, so low power to estimate 2 separate effects precisely
+# 
+# # New peak significant! Neither interaction is significant. Drop interactions and reiterate.
+# 
+# 
+# ### Scantwo unused code, won't run here on home comp:
+# # restrict to chr 3 and a reasonable step to reduce runtime
+# set.seed(3)
+# 
+# tough.scantwo.hk.chr3 <- scantwo(Costus_prob, chr=3, pheno.col = "ave_tough",  method="hk", addcovar=covariates_SD_select)
+# summary(tough.scantwo.hk.set3)
+# 
+# # Recalculate genotype probabilities at a coarser step
+# Costus_prob.s5 <- calc.genoprob(
+#   Costus_prob,
+#   step = 5,             # increase step to reduce memory use
+#   error.prob = 0.001   # optional, but keeps probs stable
+# )
+# 
+# # Now run scantwo() — no 'step' or 'error.prob' args here
+# tough.scantwo.hk.set3 <- scantwo(
+#   Costus_prob.s5,
+#   chr = "3",
+#   pheno.col = "ave_tough",
+#   method = "hk",
+#   addcovar = covariates_SD_select
+# )
+# 
+# # do some permuatation
+# require(snow) # enables use of n.cluster to specify number of nodes for parallelization of permutations
+# tough.scantwo.hk.set3 <- scantwo(Costus_prob.s5, chr=3, pheno.col = "ave_tough",  method="hk", n.perm=10, n.cluster = 3, addcovar=covariates_SD_select)
+# summary(tough.scantwo.hk.set3)
+# #calculate penalties to be used in stepwiseqtl based on scantwo permutations
+# seed.dormancy_penalties <- calc.penalties(SD.scantwo.hk.set3, alpha = 0.05)
+```
+
+###N reabsorbed
+```{r}
+## stepwiseqtl model selection based on permutations of scantwo run on HPC; see seed dormancy for cross object info - different cross object (smaller, fewer dups and step of 5) to calc penalties with scantwo
+# read in scantwo perms generated with above smaller cross on HPC 
+Nreabs.scantwo.hk.perm <- readRDS(file = "./scantwo.perms/Nreabs.scantwo.hk.perm.rds")
+#calculate penalties to be used in stepwiseqtl based on scantwo permutations
+Nreabs_pen <- calc.penalties(Nreabs.scantwo.hk.perm, alpha = 0.05)
+#     main    heavy    light 
+# 3.279993 5.715275 3.316932 
+
+#stepwiseqtl: Stepwise selection for multiple QTL
+Nreabs.step.sml.qtl <- stepwiseqtl(Costus_sml, pheno.col = "N_reabsorp", method = "hk", model = "normal", covar=covariates_Nreabs_select, penalties = Nreabs_pen, max.qtl = 5, keeplodprofile = TRUE, verbose = TRUE, refine.locations = TRUE)
+summary(Nreabs.step.sml.qtl)
+
+# # refine the qtl positions
+Nreabs.rqtl <- refineqtl(Costus_prob, pheno.col = "N_reabsorp", qtl=Nreabs.step.sml.qtl, covar=covariates_Nreabs_select, method="hk", maxit=10, maxit.fitqtl=1000)
+
+#fitqtl: Fit a multiple QTL model
+Nreabs.sml.fit <- fitqtl(Costus_prob, pheno.col = "N_reabsorp", method = "hk", model = "normal", covar=covariates_Nreabs_select, get.ests = TRUE, qtl = Nreabs.rqtl, formula = attr(Nreabs.step.sml.qtl,"formula"), dropone = TRUE)
+summary(Nreabs.sml.fit)
+
+
+## OLD addqtl stuff below #####
+# First, refine QTL locations 
+# define initial QTL positions
+Nreabs.qtl <- makeqtl(Costus_prob, chr="1", pos=27.091018, what="prob")
+# # refine the qtl positions
+Nreabs.rqtl <- refineqtl(Costus_prob, pheno.col = "N_reabsorp", qtl=Nreabs.qtl, covar=covariates_Nreabs_select, method="hk", maxit=10, maxit.fitqtl=1000)
+# doesn't change anything
+
+# look for additional qtl, using the refined qtl positions
+Nreabs.rqtl_aq_2qtl <- addqtl(Costus_prob, pheno.col="N_reabsorp", qtl=Nreabs.qtl, method="hk", covar=covariates_Nreabs_select, formula=y~Q1 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh10 + coh16 + coh18 + coh21 + coh22 + coh24 + coh25 + coh27 + coh29 + coh30 + coh32 + coh34)
+
+plot(Nreabs.rqtl_aq_2qtl)
+summary(Nreabs.rqtl_aq_2qtl)
+# highest:
+# Chrom2_121960965   2 38.5 4.13
+Nreabs.rqtl_aq_2qtl[Nreabs.rqtl_aq_2qtl$lod > 4.13,]
+# pos 38.5384
+
+# re-run fitqtl with additional QTL peak
+Nreabs.2.qtl <- makeqtl(Costus_prob, chr=c("1","2"), pos=c(27.09102,38.5384), what="prob")  
+# # refine the new qtl positions
+Nreabs.rqtl <- refineqtl(Costus_prob, pheno.col = "N_reabsorp", qtl=Nreabs.2.qtl, covar=covariates_Nreabs_select, method="hk", maxit=10, maxit.fitqtl=1000)
+# no change
+
+# fit the model
+Nreabs.out.2.qtl.fq <- fitqtl(Costus_prob, pheno.col="N_reabsorp", qtl=Nreabs.2.qtl, method="hk", get.ests=TRUE, covar=covariates_Nreabs_select, formula=y~Q1+Q2+Q1:Q2 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh10 + coh16 + coh18 + coh21 + coh22 + coh24 + coh25 + coh27 + coh29 + coh30 + coh32 + coh34)
+summary(Nreabs.out.2.qtl.fq)
+# additional peak was significant! reiterate addqtl
+
+# add 3rd qtl
+# look for additional qtl, using the refined qtl positions
+Nreabs.rqtl_aq_3qtl <- addqtl(Costus_prob, pheno.col="N_reabsorp", qtl=Nreabs.2.qtl, method="hk", covar=covariates_Nreabs_select, formula=y~Q1+Q2+Q1:Q2 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh10 + coh16 + coh18 + coh21 + coh22 + coh24 + coh25 + coh27 + coh29 + coh30 + coh32 + coh34)
+
+plot(Nreabs.rqtl_aq_3qtl)
+summary(Nreabs.rqtl_aq_3qtl)
+# highest:
+# Chrom5_132169893   5 57.7 3.231
+Nreabs.rqtl_aq_3qtl[Nreabs.rqtl_aq_3qtl$lod > 3.2,]
+# pos 57.73187
+
+# re-run fitqtl with additional QTL peak
+Nreabs.3.qtl <- makeqtl(Costus_prob, chr=c("1","2","5"), pos=c(27.09102,38.5384,54.76672), what="prob")
+# # refine the new qtl positions
+Nreabs.rqtl <- refineqtl(Costus_prob, pheno.col = "N_reabsorp", qtl=Nreabs.3.qtl, covar=covariates_Nreabs_select, method="hk", maxit=10, maxit.fitqtl=1000)
+# slight change to new one
+
+# fit the model
+Nreabs.out.3.qtl.fq <- fitqtl(Costus_prob, pheno.col="N_reabsorp", qtl=Nreabs.3.qtl, method="hk", get.ests=TRUE, covar=covariates_Nreabs_select, formula=y~Q1+Q2+Q3+Q1:Q2+Q1:Q3+Q2:Q3 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh10 + coh16 + coh18 + coh21 + coh22 + coh24 + coh25 + coh27 + coh29 + coh30 + coh32 + coh34)
+summary(Nreabs.out.3.qtl.fq)
+
+# additional peak was significant! reiterate addqtl
+
+# # add 4th qtl
+# # look for additional qtl, using the refined qtl positions
+# Nreabs.rqtl_aq_4qtl <- addqtl(Costus_prob, pheno.col="N_reabsorp", qtl=Nreabs.3.qtl, method="hk", covar=covariates_Nreabs_select, formula=y~Q1+Q2+Q3+Q1:Q2+Q1:Q3+Q2:Q3 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh10 + coh16 + coh18 + coh21 + coh22 + coh24 + coh25 + coh27 + coh29 + coh30 + coh32 + coh34)
+# 
+# plot(Nreabs.rqtl_aq_4qtl)
+# summary(Nreabs.rqtl_aq_4qtl)
+# # highest:
+# # Chrom1_144880539   1 73.8 2.90
+# Nreabs.rqtl_aq_4qtl[Nreabs.rqtl_aq_4qtl$lod > 2.8,]
+# # pos 73.82081
+# 
+# # re-run fitqtl with additional QTL peak
+# Nreabs.4.qtl <- makeqtl(Costus_prob, chr=c("1","2","5","1"), pos=c(27.09102,38.5384,54.76672,74.50284 ), what="prob")
+# # # refine the new qtl positions
+# Nreabs.rqtl <- refineqtl(Costus_prob, pheno.col = "N_reabsorp", qtl=Nreabs.4.qtl, covar=covariates_Nreabs_select, method="hk", maxit=10, maxit.fitqtl=1000)
+# # slight change to new one
+# 
+# # fit the model
+# Nreabs.out.4.qtl.fq <- fitqtl(Costus_prob, pheno.col="N_reabsorp", qtl=Nreabs.4.qtl, method="hk", get.ests=TRUE, covar=covariates_Nreabs_select, formula=y~Q1+Q2+Q3+Q4+Q1:Q2+Q1:Q3+Q2:Q3+Q1:Q4+Q2:Q4+Q3:Q4 + hybrid_index + F21_238 + F21_259 + F21_284 + F21_232 + coh10 + coh16 + coh18 + coh21 + coh22 + coh24 + coh25 + coh27 + coh29 + coh30 + coh32 + coh34)
+# summary(Nreabs.out.4.qtl.fq)
+
+# Last peak NOT significant, 3 QTL final model
+```
+
+###chlorophyll reabsorbed
+```{r}
+## REJECT this model of 2 peaks on chr 1 - undistinguishable/math artifact
+# ## stepwiseqtl model selection based on permutations of scantwo run on HPC; see seed dormancy for cross object info - different cross object (smaller, fewer dups and step of 5) to calc penalties with scantwo
+# # read in scantwo perms generated with above smaller cross on HPC 
+# Chlreabs.scantwo.hk.perm <- readRDS(file = "./scantwo.perms/Chlreabs.scantwo.hk.perm.rds")
+# #calculate penalties to be used in stepwiseqtl based on scantwo permutations
+# Chlreabs_pen <- calc.penalties(Chlreabs.scantwo.hk.perm, alpha = 0.05)
+# #     main    heavy    light 
+# # 3.279993 5.715275 3.316932 
+# 
+# #stepwiseqtl: Stepwise selection for multiple QTL
+# Chlreabs.step.qtl <- stepwiseqtl(Costus_sml, pheno.col = "chloro_reabsorp", method = "hk", model = "normal", covar=covariates_Chlreabs_select, penalties = Chlreabs_pen, max.qtl = 3, keeplodprofile = TRUE, verbose = TRUE, refine.locations = TRUE)
+# summary(Chlreabs.step.qtl)
+# 
+# # refine QTL with larger cross object
+# Chlreabs.rqtl <- refineqtl(Costus_prob, pheno.col = "chloro_reabsorp", qtl=Chlreabs.step.qtl, covar=covariates_Chlreabs_select, method="hk", maxit=10, maxit.fitqtl=1000)
+# 
+# # identifies 2 qtl right next to each other on chrom 1, so decide if it is fair to model both:
+# # find nearest markers to the two positions, and check counts/correlation
+# m1 <- find.marker(Costus_prob, chr=1, pos=1.9)
+# m2 <- find.marker(Costus_prob, chr=1, pos=2.1)
+# geno <- pull.geno(Costus_prob)
+# table(geno[,m1], geno[,m2])
+# cor(as.numeric(geno[,m1]), as.numeric(geno[,m2]), use="complete.obs")
+# # NOT reasonable! perfectly correlated aka always found together. Use scanone results instead. 
+# 
+# #fitqtl: Fit a multiple QTL model
+# Chlreabs.fit <- fitqtl(Costus_prob, pheno.col = "chloro_reabsorp", method = "hk", model = "normal", covar=covariates_Chlreabs_select, get.ests = TRUE, qtl = Chlreabs.rqtl, formula = attr(Chlreabs.step.qtl,"formula"), dropone = TRUE)
+# summary(Chlreabs.fit)
+
+
+
+
+# ## OLD addqtl stuff below #####
+# # First, refine QTL locations 
+# # create QTL object 
+# Chlreabs.qtl <- makeqtl(Costus_prob, chr="1", pos=4.144081, what="prob")
+# 
+# # # refine the qtl positions
+# Chlreabs.rqtl <- refineqtl(Costus_prob, pheno.col = "chloro_reabsorp", qtl=Chlreabs.qtl, covar=covariates_Chlreabs_select, method="hk", maxit=10, maxit.fitqtl=1000)
+# # no change
+# 
+# # look for additional qtl, using the refined qtl positions
+# Chlreabs.rqtl_aq_1qtl <- addqtl(Costus_prob, pheno.col="chloro_reabsorp", qtl=Chlreabs.rqtl, method="hk", covar=covariates_Chlreabs_select, formula=y~Q1+hybrid_index+ F21_238 + F21_284 + F21_232 + coh13 + coh16 + coh19 + coh21 + coh22 + coh24 + coh25 + coh27 + coh28 + coh30 + coh31 + coh32)
+# 
+# plot(Chlreabs.rqtl_aq_1qtl)
+# summary(Chlreabs.rqtl_aq_1qtl)
+# # highest:
+# # Chrom1_1694996     1  1.80 4.12
+# Chlreabs.rqtl_aq_1qtl[Chlreabs.rqtl_aq_1qtl$lod > 4,]
+# # pos 1.796076
+# # re-run fitqtl with additional QTL peak
+# Chlreabs.2.qtl <- makeqtl(Costus_prob, chr=c("1","1"), pos=c(4.144081,1.778), what="prob")
+# # # refine the new qtl positions
+# Chlreabs.2.rqtl <- refineqtl(Costus_prob, pheno.col = "chloro_reabsorp", qtl=Chlreabs.2.qtl, covar=covariates_Chlreabs_select, method="hk", maxit=10, maxit.fitqtl=1000)
+# # change to new peak
+# 
+# # fit the model
+# Chlreabs.out.2.qtl.fq <- fitqtl(Costus_prob, pheno.col="chloro_reabsorp", qtl=Chlreabs.2.rqtl, method="hk", get.ests=TRUE, covar=covariates_Chlreabs_select, formula = y~Q1+Q2 +Q1:Q2+ hybrid_index +  F21_238 + F21_284 + F21_232 + coh13 + coh16 + coh19 + coh21 + coh22 + coh24 + coh25 + coh27 + coh28 + coh30 + coh31 + coh32)
+# summary(Chlreabs.out.2.qtl.fq)
+# 
+# # additional peak significant! Interaction NOT significant
+# 
+# # look for additional qtl, using the refined qtl positions (PICKUP, run the below and continue)
+# Chlreabs.rqtl_aq_3qtl <- addqtl(Costus_prob, pheno.col="chloro_reabsorp", qtl=Chlreabs.2.rqtl, method="hk", covar=covariates_Chlreabs_select, formula=y~Q1+Q2+hybrid_index+ F21_238 + F21_284 + F21_232 + coh13 + coh16 + coh19 + coh21 + coh22 + coh24 + coh25 + coh27 + coh28 + coh30 + coh31 + coh32)
+# 
+# plot(Chlreabs.rqtl_aq_2qtl)
+# summary(Chlreabs.rqtl_aq_2qtl)
+# # highest:
+# # Chrom1_1645711     1  1.93 7.12
+# # PICKUP! STRANGE! Giving me basically the exact same peak as before despite it already being in the model..??? AND it is a strong peak even conditioning on the other one! I guess maybe two peaks, but should treat as one? not sure how to proceed in terms of maybe adding more QTL conditional on those... Maybe do need to do scantwo for this and leaf toughness.... 
+# Chlreabs.rqtl_aq_1qtl[Chlreabs.rqtl_aq_1qtl$lod > 20,]
+# 
+# # re-run fitqtl with additional QTL peak
+# Chlreabs.2.qtl <- makeqtl(Costus_prob, chr=c("1","6"), pos=c(4.144081,50.59772), what="prob")
+# # # refine the new qtl positions
+# Chlreabs.rqtl <- refineqtl(Costus_prob, pheno.col = "chloro_reabsorp", qtl=Chlreabs.2.qtl, covar=covariates_Chlreabs_select, method="hk", maxit=10, maxit.fitqtl=1000)
+# # change to new peak
+# 
+# # fit the model
+# Chlreabs.out.2.qtl.fq <- fitqtl(Costus_prob, pheno.col="chloro_reabsorp", qtl=Chlreabs.2.qtl, method="hk", get.ests=TRUE, covar=covariates_Chlreabs_select, formula = y~Q1+Q2 + hybrid_index +  F21_238 + F21_284 + F21_232 + coh13 + coh16 + coh19 + coh21 + coh22 + coh24 + coh25 + coh27 + coh28 + coh30 + coh31 + coh32)
+# summary(Chlreabs.out.2.qtl.fq)
+
+```
+## Bayes interval calcs
+
+```{r}
+## get 95% Bayes credible intervals
+########### seed dormancy
+# chr 2 qtl
+SD.chr2.bayes.CI <- bayesint(SD.rqtl, qtl.index = 1, prob=0.95,expandtomarkers = TRUE)
+#                 chr      pos      lod
+# Chrom2_25443278   2 65.41590  8.751211
+# Chrom2_18980613   2 68.57796 10.176843
+# Chrom2_15333627   2 74.90205  8.873284
+
+# chr 6 qtl
+SD.chr6.bayes.CI <- bayesint(SD.rqtl, qtl.index = 2, prob=0.95,expandtomarkers = TRUE)
+#                   chr      pos      lod
+# Chrom6_116969598    6 54.63976 18.78175
+# Chrom6_119185681    6 55.49080 20.15805
+# Chrom6_119185681    6 55.49080 20.15805
+
+########## growth rate (calc with scanone perms bc not using scantwo formula)
+GR.chr3.bayes.CI <- bayesint(growth.rate.scanone.hk, chr=3, prob=0.95,expandtomarkers = TRUE)
+#bayesint(GR.rqtl, qtl.index = 1, prob=0.95,expandtomarkers = TRUE)
+# #                 chr      pos      lod
+# # Chrom3_13933797   3 50.61793 2.568826
+# # Chrom3_9524645    3 59.20533 3.633757
+# # Chrom3_7882206    3 63.63750 2.439100
+GR.chr5.bayes.CI <- bayesint(growth.rate.scanone.hk, chr=5, prob=0.95,expandtomarkers = TRUE)
+#                  chr      pos      lod
+# Chrom5_17548772    5 29.63914 3.892109
+# Chrom5_123010379   5 44.08818 4.662454
+# Chrom5_125293559   5 45.94034 3.845342
+
+########## leaf toughness
+tough.chr3.bayes.CI <- bayesint(tough.rqtl, qtl.index =1, 0.95,expandtomarkers = TRUE)
+#                 chr      pos      lod
+# Chrom3_19967664   3 42.16840 4.797105
+# Chrom3_11284782   3 55.46614 6.483627
+# Chrom3_10856906   3 56.98922 4.699233
+
+tough.chr8.bayes.CI <- bayesint(tough.rqtl, qtl.index =2, 0.95,expandtomarkers = TRUE)
+#                 chr       pos      lod
+# Chrom8_5981565    8  9.682326 2.197106
+# Chrom8_8524965    8 14.884526 3.925421
+# Chrom8_12546183   8 22.260861 2.236651
+
+########## N reabsorption
+Nreabs.chr1.bayes.CI <- bayesint(Nreabs.rqtl, qtl.index = 1, expandtomarkers = TRUE)
+#                 chr      pos      lod
+# Chrom1_8795923    1 22.67370 5.880320
+# Chrom1_12280628   1 27.09102 6.315253
+# Chrom1_13024583   1 27.21509 6.288679
+
+# from scanone results - not refined QTL pos
+#                 chr      pos      lod
+# Chrom1_8795923    1 22.67370 5.231965
+# Chrom1_12280628   1 27.09102 5.546693
+# Chrom1_13040576   1 27.33809 4.923791
+Nreabs.chr2.bayes.CI <- bayesint(Nreabs.rqtl, qtl.index = 2, expandtomarkers = TRUE)
+#                  chr      pos      lod
+# Chrom2_143554007   2 17.78727 2.414990
+# Chrom2_121960965   2 38.53840 4.132788
+# Chrom2_36738794    2 54.94164 2.509663
+
+########## chlorophyll reabsorption (USE scanone results bc artificially small interval if using 2 peaks on chr1)
+Chlreabs.chr1.bayes.CI <- bayesint(Chlreabs.rqtl, qtl.index =1, 0.95,expandtomarkers = TRUE)
+#                chr       pos      lod
+# Chrom1_281758    1  0.000000 6.338357
+# Chrom1_1615522   1  4.144081 7.814356
+# Chrom1_4116997   1 12.155264 6.941577
+
+####### function to combine credible interval info into a single line per peak for a df with everything:
+extract_bayesint_bp_cm <- function(bi, trait_name) {
+  marker_names <- rownames(bi)
+  
+  bp <- as.numeric(sub(".*_", "", marker_names))
+  cm <- bi$pos
+  
+  ord <- order(bp)
+  bp <- bp[ord]
+  cm <- cm[ord]
+  bi <- bi[ord, ]
+  
+  # Peak
+  peak_bp <- bp[which.max(bi$lod)]
+  peak_cm <- cm[which.max(bi$lod)]
+  
+  # CI in bp
+  lower_bp <- bp[1]
+  upper_bp <- bp[3]
+  
+  # CI in cm — reorder cM boundaries to ensure lower < upper
+  lower_cm <- min(cm[1], cm[3])
+  upper_cm <- max(cm[1], cm[3])
+  
+  data.frame(
+    trait = trait_name,
+    chr   = bi$chr[1],
+    peak_bp = peak_bp,
+    lower95CI_bp = lower_bp,
+    upper95CI_bp = upper_bp,
+    peak_cm = peak_cm,
+    lower95CI_cm = lower_cm,
+    upper95CI_cm = upper_cm
+  )
+}
+
+
+# run function to extract CI for each peak:
+SD.chr2.CI.1row <- extract_bayesint_bp_cm(SD.chr2.bayes.CI, "SD")
+SD.chr6.CI.1row <- extract_bayesint_bp_cm(SD.chr6.bayes.CI, "SD")
+
+GR.chr3.CI.1row <- extract_bayesint_bp_cm(GR.chr3.bayes.CI, "GR")
+GR.chr5.CI.1row <- extract_bayesint_bp_cm(GR.chr5.bayes.CI, "GR")
+
+tough.chr3.CI.1row <- extract_bayesint_bp_cm(tough.chr3.bayes.CI, "tough")
+tough.chr8.CI.1row <- extract_bayesint_bp_cm(tough.chr8.bayes.CI, "tough")
+
+Nreabs.chr1.CI.1row <- extract_bayesint_bp_cm(Nreabs.chr1.bayes.CI, "Nreabs")
+Nreabs.chr2.CI.1row <- extract_bayesint_bp_cm(Nreabs.chr2.bayes.CI, "Nreabs")
+
+Chlreabs.chr1.CI.1row <- extract_bayesint_bp_cm(Chlreabs.chr1.bayes.CI, "Chlreabs")
+
+# combine all into single DF
+all_QTL_CI_bp_cm <- dplyr::bind_rows(SD.chr2.CI.1row, SD.chr6.CI.1row, GR.chr3.CI.1row, GR.chr5.CI.1row, tough.chr3.CI.1row, tough.chr8.CI.1row, Nreabs.chr1.CI.1row, Nreabs.chr2.CI.1row, Chlreabs.chr1.CI.1row)
+
+# calculate size of CI
+all_QTL_CI_bp_cm  <- all_QTL_CI_bp_cm %>% 
+  mutate(CI_size_bp = upper95CI_bp-lower95CI_bp,
+         CI_size_cm = upper95CI_cm-lower95CI_cm)
+
+# export peak locations and bayesian credible intervals
+write.csv(all_QTL_CI_bp_cm, "all_QTL_CIs_bp_cm.251130.csv", row.names = F)
+```
