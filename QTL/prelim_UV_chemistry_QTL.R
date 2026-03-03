@@ -7,7 +7,7 @@
 
 library(dplyr)
 library(qtl)
-library(qtl2ggplot)
+if (requireNamespace("qtl2ggplot", quietly = TRUE)) library(qtl2ggplot)  # optional; script uses base plot()
 
 # Permutations per chemistry trait for LOD threshold (10% alpha); set to 0 to skip perms and threshold line
 n_perm <- 100
@@ -200,10 +200,11 @@ saveRDS(covar_by_trait, "prelim_UV_chemistry_covariates_by_trait.rds")
 write.csv(summ, "prelim_UV_chemistry_scanone_summary.csv", row.names = FALSE)
 message("Saved: prelim_UV_chemistry_scanone_by_trait.rds, prelim_UV_chemistry_covariates_by_trait.rds, prelim_UV_chemistry_scanone_summary.csv")
 
-# Permutations per trait for 10% LOD threshold (as in main qmd)
+# Permutations per trait for 10% and 50% LOD thresholds (as in main qmd)
 perm_cutoff_by_trait <- setNames(rep(NA_real_, length(scanone_chemistry)), names(scanone_chemistry))
+perm_cutoff_50_by_trait <- setNames(rep(NA_real_, length(scanone_chemistry)), names(scanone_chemistry))
 if (n_perm > 0) {
-  message("Running ", n_perm, " permutations per trait for LOD threshold (alpha = 0.1)...")
+  message("Running ", n_perm, " permutations per trait for LOD thresholds (10% and 50%)...")
   for (tr in names(scanone_chemistry)) {
     addcovar <- if (length(covar_by_trait[[tr]]) > 0) qtl::pull.pheno(Costus, covar_by_trait[[tr]]) else NULL
     perm_tr <- tryCatch(
@@ -211,15 +212,73 @@ if (n_perm > 0) {
       error = function(e) NULL
     )
     if (!is.null(perm_tr)) {
-      thresh <- summary(perm_tr, alpha = 0.1)
-      perm_cutoff_by_trait[[tr]] <- if (is.data.frame(thresh)) thresh[1, 1] else as.numeric(thresh)[1]
+      thresh10 <- summary(perm_tr, alpha = 0.1)
+      perm_cutoff_by_trait[[tr]] <- if (is.data.frame(thresh10)) thresh10[1, 1] else as.numeric(thresh10)[1]
+      thresh50 <- summary(perm_tr, alpha = 0.5)
+      perm_cutoff_50_by_trait[[tr]] <- if (is.data.frame(thresh50)) thresh50[1, 1] else as.numeric(thresh50)[1]
     }
   }
   saveRDS(perm_cutoff_by_trait, "prelim_UV_chemistry_perm_cutoffs_10pct.rds")
-  message("Permutation cutoffs (10%) saved to prelim_UV_chemistry_perm_cutoffs_10pct.rds")
+  saveRDS(perm_cutoff_50_by_trait, "prelim_UV_chemistry_perm_cutoffs_50pct.rds")
+  message("Permutation cutoffs saved (10% and 50%).")
 }
 
-# Preliminary scanone plots: two columns per page, red 10% threshold line when perms were run
+# Identify chemicals with shared or close peaks above 50% LOD threshold
+peak_above_50 <- summ
+peak_above_50$cutoff_50 <- perm_cutoff_50_by_trait[peak_above_50$trait]
+peak_above_50 <- peak_above_50[peak_above_50$lod > peak_above_50$cutoff_50 & !is.na(peak_above_50$cutoff_50), ]
+peak_above_50 <- peak_above_50[order(peak_above_50$chr, peak_above_50$pos), ]
+cM_window <- 15  # traits within this many cM on same chr considered "shared" peak
+if (nrow(peak_above_50) > 0) {
+  peak_above_50$group_id <- NA_integer_
+  grp <- 0
+  for (i in seq_len(nrow(peak_above_50))) {
+    if (!is.na(peak_above_50$group_id[i])) next
+    grp <- grp + 1
+    peak_above_50$group_id[i] <- grp
+    chr_i <- peak_above_50$chr[i]
+    pos_i <- peak_above_50$pos[i]
+    # all on same chr within cM_window get same group (then merge overlapping in next pass)
+    same_region <- peak_above_50$chr == chr_i & abs(peak_above_50$pos - pos_i) <= cM_window
+    peak_above_50$group_id[same_region] <- grp
+  }
+  # merge groups: if any member of group A is within cM_window of any member of group B, same group
+  repeat {
+    merged <- FALSE
+    for (g in unique(peak_above_50$group_id)) {
+      w <- which(peak_above_50$group_id == g)
+      chrs <- peak_above_50$chr[w]
+      pos <- peak_above_50$pos[w]
+      for (j in seq_len(nrow(peak_above_50))) {
+        if (peak_above_50$group_id[j] == g) next
+        near <- any(peak_above_50$chr[j] == chrs & abs(peak_above_50$pos[j] - pos) <= cM_window)
+        if (near) {
+          old_g <- peak_above_50$group_id[j]
+          peak_above_50$group_id[peak_above_50$group_id == old_g] <- g
+          merged <- TRUE
+        }
+      }
+    }
+    if (!merged) break
+  }
+  shared_peaks <- aggregate(
+    list(traits = peak_above_50$trait),
+    by = list(chr = peak_above_50$chr, group_id = peak_above_50$group_id),
+    FUN = function(x) paste(x, collapse = ", ")
+  )
+  shared_peaks$n_traits <- lengths(strsplit(shared_peaks$traits, ", "))
+  pos_med <- aggregate(pos ~ chr + group_id, data = peak_above_50, FUN = median)
+  shared_peaks$pos_median_cM <- pos_med$pos[match(paste(shared_peaks$chr, shared_peaks$group_id), paste(pos_med$chr, pos_med$group_id))]
+  shared_peaks <- shared_peaks[order(-shared_peaks$n_traits), c("chr", "pos_median_cM", "n_traits", "traits")]
+  write.csv(shared_peaks, "prelim_UV_chemistry_shared_peaks_above50pct.csv", row.names = FALSE)
+  message("Chemicals with peak above 50% threshold: ", nrow(peak_above_50), " traits in ", nrow(shared_peaks), " shared/close peak region(s).")
+  message("Shared peaks (above 50% LOD, within ", cM_window, " cM) written to prelim_UV_chemistry_shared_peaks_above50pct.csv")
+  if (nrow(shared_peaks) > 0) print(shared_peaks)
+} else {
+  message("No peaks above 50% LOD threshold (or no permutation run); skipping shared-peak summary.")
+}
+
+# Preliminary scanone plots: single column (one plot per page) for wider view of QTL along chromosomes
 pdf_scanone <- "prelim_UV_chemistry_scanone_plots.pdf"
 pdf(pdf_scanone, width = 14, height = 5)
 par(mar = c(3, 3, 2, 1), mfrow = c(1, 1))
