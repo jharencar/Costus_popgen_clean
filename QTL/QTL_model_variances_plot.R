@@ -116,10 +116,11 @@ plot_data$trait <- factor(plot_data$trait, levels = unique(plot_data$trait))
 plot_data$component <- factor(plot_data$component,
   levels = c("Unexplained", "QTL", "Family and/or hybrid index", "Environment"))
 
-# Plot: trait on x, % variance on y, one point per (trait, component), colored by component
+# Plot: trait on x, % variance on y. Draw Environment (squares) first, then Family (triangles) on top.
 # Colors: Wong/Nature Methods colorblind-friendly palette
 p <- ggplot(plot_data, aes(x = trait, y = pct_var, colour = component, shape = component)) +
-  geom_point(size = 3.5) +
+  geom_point(data = filter(plot_data, component != "Family and/or hybrid index"), size = 3.5) +
+  geom_point(data = filter(plot_data, component == "Family and/or hybrid index"), size = 3.5) +
   scale_colour_manual(
     values = c(
       "Unexplained"               = "#666666",
@@ -139,12 +140,12 @@ p <- ggplot(plot_data, aes(x = trait, y = pct_var, colour = component, shape = c
     name = "Variance component"
   ) +
   labs(
-    x = "Trait",
+    x = NULL,
     y = "% variance"
   ) +
-  theme_bw() +
+  theme_bw(base_size = 12) +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.text.x = element_text(angle = 0),
     legend.position = "right",
     plot.title = element_text(hjust = 0.5)
   ) +
@@ -155,8 +156,8 @@ print(p)
 # Save
 out_pdf <- "QTL_model_variances_plot.pdf"
 out_png <- "QTL_model_variances_plot.png"
-ggsave(out_pdf, p, width = 5, height = 3.5)
-ggsave(out_png, p, width = 5, height = 3.5, dpi = 150)
+ggsave(out_pdf, p, width = 5, height = 2.5)
+ggsave(out_png, p, width = 5, height = 2.5, dpi = 150)
 message("Saved: ", out_pdf, ", ", out_png)
 
 # Optional: save summary table
