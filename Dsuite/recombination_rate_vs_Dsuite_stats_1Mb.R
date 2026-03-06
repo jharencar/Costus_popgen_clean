@@ -132,6 +132,18 @@ dsuite_with_recomb_selected <- dsuite_with_recomb %>%
     )
   )
 
+dsuite_with_recomb_selected_by_chr_decile <- dsuite_with_recomb_selected %>%
+  group_by(chrN) %>%
+  mutate(
+    recomb_decile_chr_num = ntile(recomb_cM_Mb, 10),
+    recomb_decile_chr = factor(
+      recomb_decile_chr_num,
+      levels = 1:10,
+      labels = paste0("D", 1:10)
+    )
+  ) %>%
+  ungroup()
+
 # ---- Diagnostic summaries ----
 recomb_diagnostic_overall <- recomb_bins %>%
   summarise(
@@ -239,6 +251,24 @@ plot_stat_by_recomb_decile <- function(df, stat_col, y_lab) {
     )
 }
 
+plot_stat_by_recomb_decile_col <- function(df, stat_col, y_lab, decile_col) {
+  plot_df <- df[is.finite(df[[stat_col]]), , drop = FALSE]
+
+  ggplot(
+    plot_df,
+    aes(x = .data[[decile_col]], y = .data[[stat_col]])
+  ) +
+    geom_boxplot(outlier.alpha = 0.2, width = 0.7) +
+    labs(
+      x = "Recombination rate decile",
+      y = y_lab
+    ) +
+    theme(
+      panel.grid.minor = element_blank(),
+      axis.text.x = element_text(angle = 45, hjust = 1)
+    )
+}
+
 fdM_by_recomb_decile_boxplot <- plot_stat_by_recomb_decile(
   dsuite_with_recomb,
   "f_dM",
@@ -312,6 +342,34 @@ d_f_by_recomb_decile_boxplot_selected <- plot_stat_by_recomb_decile(
 recomb_decile_boxplots_3panel_selected <- fdM_by_recomb_decile_boxplot_selected /
   f_d_by_recomb_decile_boxplot_selected /
   d_f_by_recomb_decile_boxplot_selected
+
+# ---- Selected chromosomes only: f_dM per chromosome multipanel PDFs ----
+fdM_raw_by_chr_plots <- lapply(selected_chroms, function(chr_num) {
+  plot_stat_vs_recomb(
+    dsuite_with_recomb_selected[dsuite_with_recomb_selected$chrN == chr_num, , drop = FALSE],
+    "f_dM",
+    "f_dM"
+  ) +
+    ggtitle(paste("Chromosome", chr_num))
+})
+
+fdM_raw_by_chr_pdf <- wrap_plots(fdM_raw_by_chr_plots, ncol = 2)
+
+fdM_decile_by_chr_plots <- lapply(selected_chroms, function(chr_num) {
+  plot_stat_by_recomb_decile_col(
+    dsuite_with_recomb_selected_by_chr_decile[
+      dsuite_with_recomb_selected_by_chr_decile$chrN == chr_num,
+      ,
+      drop = FALSE
+    ],
+    "f_dM",
+    "f_dM",
+    "recomb_decile_chr"
+  ) +
+    ggtitle(paste("Chromosome", chr_num))
+})
+
+fdM_decile_by_chr_pdf <- wrap_plots(fdM_decile_by_chr_plots, ncol = 2)
 
 # ---- Save outputs ----
 if (!dir.exists(file.path(project_root, "Dsuite"))) {
@@ -424,6 +482,18 @@ ggsave(
   file.path(project_root, "Dsuite", "introgression_stats_by_recombination_rate_decile_3panel_chr135789.png"),
   plot = recomb_decile_boxplots_3panel_selected,
   device = "png", width = 8, height = 16.5, units = "cm", dpi = 300
+)
+
+ggsave(
+  file.path(project_root, "Dsuite", "f_dM_raw_by_chromosome_recombination_chr135789.pdf"),
+  plot = fdM_raw_by_chr_pdf,
+  device = "pdf", width = 18, height = 24, units = "cm"
+)
+
+ggsave(
+  file.path(project_root, "Dsuite", "f_dM_deciles_by_chromosome_recombination_chr135789.pdf"),
+  plot = fdM_decile_by_chr_pdf,
+  device = "pdf", width = 18, height = 24, units = "cm"
 )
 
 write.csv(
