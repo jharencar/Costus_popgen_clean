@@ -112,9 +112,15 @@ for (f in model_files) {
 plot_data <- bind_rows(plot_data_list)
 
 # Order traits (use order of appearance in files, or alphabetically)
-plot_data$trait <- factor(plot_data$trait, levels = unique(plot_data$trait))
+trait_levels <- unique(plot_data$trait)
+plot_data$trait <- factor(plot_data$trait, levels = trait_levels)
 plot_data$component <- factor(plot_data$component,
   levels = c("Unexplained", "QTL", "Family and/or hybrid index", "Environment"))
+
+# Display labels for x-axis (abbreviations with periods)
+trait_labels <- setNames(as.character(trait_levels), trait_levels)
+trait_labels["Chlreabs"] <- "Chl.reabs"
+trait_labels["Nreabs"]   <- "N.reabs"
 
 # Plot: trait on x, % variance on y. Draw Environment (squares) first, then Family (triangles) on top.
 # Colors: Wong/Nature Methods colorblind-friendly palette
@@ -143,7 +149,8 @@ p <- ggplot(plot_data, aes(x = trait, y = pct_var, colour = component, shape = c
     x = NULL,
     y = "% variance"
   ) +
-  theme_bw(base_size = 12) +
+  scale_x_discrete(labels = trait_labels) +
+  theme_bw(base_size = 11) +
   theme(
     axis.text.x = element_text(angle = 0),
     legend.position = "right",

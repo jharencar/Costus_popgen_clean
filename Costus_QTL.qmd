@@ -624,11 +624,11 @@ write.table(summary(growth.rate.scanone.hk[growth.rate.scanone.hk$lod > GR_10cut
 #| eval: false
 #| include: false
 pdf("./QTL_plots/growth.rate-qtl_251016.pdf",24,7)
-par(mar = c(5, 5, 4, 2))
+par(mar = c(5, 5, 4, 2), cex.axis = 2)
 plot(growth.rate.scanone.hk,lodcolumn=1,
      ylab="LOD score",
-     main = "growth rate",
-     cex.lab = 2,
+     main = "Growth rate",
+     cex.lab = 2.5,
      cex.main = 2.5)
 abline(h=GR_10cutoff_lod, col="red", lwd=3)
 dev.off()
@@ -778,11 +778,11 @@ write.table(summary(Nreabs.scanone.hk[Nreabs.scanone.hk$lod > Nreabs_10cutoff_lo
 #| include: false
 
 pdf("./QTL_plots/Nreabs-qtl.pdf",24,7)
-par(mar = c(5, 5, 4, 2))
+par(mar = c(5, 5, 4, 2), cex.axis = 2)
 plot(Nreabs.scanone.hk,lodcolumn=1, 
      ylab="LOD score",
-     main = "% leaf nitrogen reabsorption",
-     cex.lab = 2,
+     main = "% leaf nitrogen reabsorption during drought",
+     cex.lab = 2.5,
      cex.main = 2.5)
 abline(h=Nreabs_10cutoff_lod, col="red", lwd=3)
 dev.off()
