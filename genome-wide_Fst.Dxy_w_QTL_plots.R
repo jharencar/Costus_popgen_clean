@@ -534,3 +534,57 @@ three_panel_hist <- fst_windows_hist_w.QTL.CIs /
   plot_layout(guides = "collect")
 ggsave(file.path(project_root, "Fst_Dxy_fdM_genomewide_distribution_w_QTL_3panel.png"), three_panel_hist,
   device = "png", width = 17, height = 18, units = "cm")
+
+# ---- Recombination rate vs Dsuite stats (f_dM, f_d, d_f) from cM–bp relationship ----
+# Recombination rate = |ΔcM| / window_bp * 1e6 (cM/Mb) per Dsuite window; one dataset for all three stats
+dsuite_with_recomb <- LASIout_w50s25_all9 %>%
+  select(chr, windowStart, windowEnd, f_dM, f_d, d_f) %>%
+  mutate(chrN = as.numeric(str_extract(chr, "\\d+"))) %>%
+  filter(chrN != 4) %>%
+  rowwise() %>%
+  mutate(
+    cM_start = bp_to_cm_funs[[as.character(chrN)]](windowStart),
+    cM_end = bp_to_cm_funs[[as.character(chrN)]](windowEnd),
+    window_bp = windowEnd - windowStart,
+    recomb_cM_Mb = if_else(window_bp > 0, abs(cM_end - cM_start) / window_bp * 1e6, NA_real_)
+  ) %>%
+  ungroup() %>%
+  filter(is.finite(recomb_cM_Mb))
+
+# f_dM: positive values only (same as histogram logic)
+recomb_vs_fdM_plot <- ggplot(dsuite_with_recomb %>% filter(f_dM > 0), aes(x = recomb_cM_Mb, y = f_dM)) +
+  geom_point(alpha = 0.4, size = 1.5) +
+  geom_smooth(method = "loess", se = TRUE, color = "darkred", linewidth = 0.8) +
+  labs(x = "Recombination rate (cM/Mb)", y = "f_dM") +
+  theme(panel.grid.minor = element_blank())
+
+# f_d
+recomb_vs_f_d_plot <- ggplot(dsuite_with_recomb %>% filter(is.finite(f_d)), aes(x = recomb_cM_Mb, y = f_d)) +
+  geom_point(alpha = 0.4, size = 1.5) +
+  geom_smooth(method = "loess", se = TRUE, color = "darkred", linewidth = 0.8) +
+  labs(x = "Recombination rate (cM/Mb)", y = "f_d") +
+  theme(panel.grid.minor = element_blank())
+
+# d_f
+recomb_vs_d_f_plot <- ggplot(dsuite_with_recomb %>% filter(is.finite(d_f)), aes(x = recomb_cM_Mb, y = d_f)) +
+  geom_point(alpha = 0.4, size = 1.5) +
+  geom_smooth(method = "loess", se = TRUE, color = "darkred", linewidth = 0.8) +
+  labs(x = "Recombination rate (cM/Mb)", y = "d_f") +
+  theme(panel.grid.minor = element_blank())
+
+# Three-panel: recombination rate vs f_dM, f_d, d_f
+recomb_by_stat_3panel <- recomb_vs_fdM_plot / recomb_vs_f_d_plot / recomb_vs_d_f_plot
+
+if (!dir.exists(file.path(project_root, "Dsuite"))) dir.create(file.path(project_root, "Dsuite"))
+ggsave(file.path(project_root, "Dsuite", "recombination_rate_vs_f_dM.png"),
+       plot = recomb_vs_fdM_plot,
+       device = "png", width = 14, height = 10, units = "cm", dpi = 300)
+ggsave(file.path(project_root, "Dsuite", "recombination_rate_vs_f_d.png"),
+       plot = recomb_vs_f_d_plot,
+       device = "png", width = 14, height = 10, units = "cm", dpi = 300)
+ggsave(file.path(project_root, "Dsuite", "recombination_rate_vs_d_f.png"),
+       plot = recomb_vs_d_f_plot,
+       device = "png", width = 14, height = 10, units = "cm", dpi = 300)
+ggsave(file.path(project_root, "Dsuite", "recombination_rate_vs_Dsuite_stats_3panel.png"),
+       plot = recomb_by_stat_3panel,
+       device = "png", width = 14, height = 24, units = "cm", dpi = 300)
