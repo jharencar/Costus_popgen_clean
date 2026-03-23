@@ -130,9 +130,9 @@ p <- ggplot(plot_data, aes(x = trait, y = pct_var, colour = component, shape = c
   scale_colour_manual(
     values = c(
       "Unexplained"               = "#666666",
-      "QTL"                       = "#E69F00",
+      "QTL"                       = "#e66400",
       "Family and/or hybrid index" = "#56B4E9",
-      "Environment"               = "#009E73"
+      "Environment"               = "#7fa615"
     ),
     name = "Variance component"
   ) +
@@ -147,7 +147,7 @@ p <- ggplot(plot_data, aes(x = trait, y = pct_var, colour = component, shape = c
   ) +
   labs(
     x = NULL,
-    y = "% variance"
+    y = "% phenotypic variance"
   ) +
   scale_x_discrete(labels = trait_labels) +
   theme_bw(base_size = 11) +

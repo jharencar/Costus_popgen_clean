@@ -1043,7 +1043,18 @@ summary(SD.step.qtl)
 SD.rqtl <- refineqtl(Costus_prob, pheno.col="log_days_to_radicle", covar=covariates_SD_select, qtl=SD.step.qtl, method="hk", maxit=10, maxit.fitqtl=1000)
 
 #fitqtl: Fit a multiple QTL model
-seed.dormancy.fit <- fitqtl(Costus_prob, pheno.col = "log_days_to_radicle", method = "hk", model = "normal", covar=covariates_SD_select, get.ests = TRUE, qtl = SD.rqtl, formula = attr(SD.step.qtl,"formula"), dropone = TRUE)
+# Use formula from stepwiseqtl if present; attr(...,"formula") is NULL if you skip stepwiseqtl
+# or in some qtl builds — then build the same structure as summary(SD.step.qtl) (cohorts + Q1...Qn).
+sd_fit_formula <- attr(SD.step.qtl, "formula")
+if (is.null(sd_fit_formula)) {
+  nq <- qtl::nqr(SD.rqtl)
+  stopifnot(nq >= 1)
+  sd_fit_formula <- stats::as.formula(paste(
+    "y ~ s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15 +",
+    paste(paste0("Q", seq_len(nq)), collapse = " + ")
+  ))
+}
+seed.dormancy.fit <- fitqtl(Costus_prob, pheno.col = "log_days_to_radicle", method = "hk", model = "normal", covar=covariates_SD_select, get.ests = TRUE, qtl = SD.rqtl, formula = sd_fit_formula, dropone = TRUE)
 summary(seed.dormancy.fit)
 
 ##### first attempt stepwise auto select w default penalties ####
@@ -1717,3 +1728,23 @@ all_QTL_CI_bp_cm  <- all_QTL_CI_bp_cm %>%
 # export peak locations and bayesian credible intervals
 write.csv(all_QTL_CI_bp_cm, "all_QTL_CIs_bp_cm.251130.csv", row.names = F)
 ```
+
+## Genomic heritability (narrow-sense *h*²)
+
+This section documents how **SNP-based (genomic) heritability** relates to the QTL analysis above. It is **not** the same quantity as the **percent variance** partitions from Haley–Knott `fitqtl` models in `QTL_model_variances_plot.R`: those partitions are **fixed-effects** sums of squares (including QTL genotypes and hybrid index as fixed terms), whereas *h*² here is the ratio of **additive genetic** and **residual** variance components from a **mixed model** with a genomic relationship matrix (GRM).
+
+### Phenotype scale and what *h*² refers to
+
+- **Seed dormancy (SD):** same scale as mapping: **log**(`days_to_radicle`).
+- **Growth rate (GR), toughness, N reabsorption, chlorophyll reabsorption:** **untransformed** phenotypes, as in `scanone` / `fitqtl`.
+
+**Primary definition:** For each trait we fit **y** = **X**β + **g** + **e** with **g** ~ N(0, σ²*g* **G**) and **e** ~ N(0, σ²*e* **I**), where **G** is a VanRaden (method 1) GRM from SNP dosages (A/H/B coded as 0/1/2) after MAF filtering, and **X** contains the **same covariates** as the final per-trait QTL model (seed-cohort / cohort / hybrid index / F2 family indicators as in the model-selection blocks above). **Narrow-sense genomic heritability** is reported as \(\hat{h}^2 = \hat{\sigma}^2_g / (\hat{\sigma}^2_g + \hat{\sigma}^2_e)\). This is **not** *h*² on purely “raw” phenotypes with no nuisance effects, and it is **not** computed on **residuals** from a prior fixed-only regression (which would double-adjust relative to the mixed model). It answers: “additive genetic variance relative to residual variance **after** the same covariate adjustment as QTL mapping.”
+
+### Implementation
+
+- **Script:** `QTL/genomic_heritability_QTL_traits.R` (run from the repo root: `Rscript QTL/genomic_heritability_QTL_traits.R`). Outputs `QTL/genomic_heritability_QTL_traits.csv` with per-trait *n*, \(\hat{h}^2\), standard error (from `sommer`), and an optional family check (below).
+- **Population scope:** *h*² is defined with respect to **allele frequencies and relatedness in this F3 experimental sample**, not a natural population.
+
+### Optional F2-line variance (interpret with caution)
+
+The same script fits `lme4::lmer` with `(1|family)` **in addition to** the same fixed covariates, and reports an intraclass correlation–like ratio Var(family)/(Var(family) + Var(residual)). There are only **five** F2 parent groups, so this component is **imprecise** and **not** interchangeable with genome-wide *h*²; it may be **singular** (zero family variance) when the cohort structure already absorbs line differences.

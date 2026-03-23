@@ -114,7 +114,7 @@ LASI_99.9thper_w50s25_f_dM <- ggplot(data = LASIout_positive, aes(x = windowStar
   geom_hline(yintercept = cutoff99.9thPercentile, linetype = "dashed", color = "red") +
   scale_color_manual(values = rep(c("black", "darkgray"), ceiling(length(unique(axis_set_dsuite$chr)) / 2))) +
   guides(color = "none") +
-  geom_point(data = subset(LASIout_positive, f_dM > cutoff99.9thPercentile), color = "red") +
+  geom_point(data = subset(LASIout_positive, f_dM > cutoff99.9thPercentile), color = "red", size = 4.5) +
   scale_x_continuous(label = axis_set_dsuite$chr_label, breaks = axis_set_dsuite$center) +
   labs(x = NULL, y = "f_dM") +
   theme(plot.margin = unit(c(2, 1, 1, 1), "cm"))
@@ -207,41 +207,27 @@ windowed_Fst_avg_list <- lapply(1:9, function(i) windowed_Fst_avg %>% filter(chr
 names(windowed_Fst_avg_list) <- paste0("chr", 1:9)
 
 # ---- Dxy: plot with QTL ----
-# Scale bar: 2 Mb at top left, 1 Mb black + 1 Mb white
-scale_bar_2Mb <- function(raw_df, win_df, y_col = "avg_dxy") {
-  x_range <- range(c(raw_df$window_pos_1, win_df$WindowMid), na.rm = TRUE)
-  y_vals <- c(0, pmax(raw_df[[y_col]], 0, na.rm = TRUE), win_df$MeanY)
-  y_range <- range(y_vals, na.rm = TRUE)
-  bar_x_left <- x_range[1] + 0.01 * diff(x_range)
-  bar_x_mid <- bar_x_left + 1e6
-  bar_x_right <- bar_x_left + 2e6
-  bar_ht <- 0.05 * diff(y_range)
-  bar_y_top <- y_range[2] - 0.02 * diff(y_range)
-  bar_y_bottom <- bar_y_top - bar_ht
-  scale_df <- data.frame(
-    xmin = c(bar_x_left, bar_x_mid),
-    xmax = c(bar_x_mid, bar_x_right),
-    ymin = bar_y_bottom,
-    ymax = bar_y_top,
-    fill = c("black", "white")
-  )
-  list(
-    geom_rect(data = scale_df, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill),
-              colour = "black", linewidth = 0.4, inherit.aes = FALSE),
-    scale_fill_identity(),
-    annotate("text", x = bar_x_left + 1e6, y = bar_y_bottom - 0.015 * diff(y_range),
-             label = "2 Mb", size = 3.2, hjust = 0.5)
-  )
+cutoff99.9_dxy <- {
+  x <- pixy_wide$avg_dxy
+  x <- pmax(x, 0)
+  quantile(x[is.finite(x)], 0.999)
 }
 
-plot_chr_combined <- function(raw_df, win_df) {
-  sb <- scale_bar_2Mb(raw_df, win_df, "avg_dxy")
+plot_chr_combined <- function(raw_df, win_df, cutoff99.9) {
   ggplot(raw_df, aes(x = window_pos_1)) +
     geom_point(
+      data = raw_df %>% filter(pmax(avg_dxy, 0) <= cutoff99.9),
       aes(y = pmax(avg_dxy, 0)),
       size = 1,
       alpha = 0.4,
       color = "grey40"
+    ) +
+    geom_point(
+      data = raw_df %>% filter(pmax(avg_dxy, 0) > cutoff99.9),
+      aes(y = pmax(avg_dxy, 0)),
+      size = 2,
+      alpha = 0.9,
+      color = "red"
     ) +
     geom_line(
       data = win_df,
@@ -249,7 +235,6 @@ plot_chr_combined <- function(raw_df, win_df) {
       color = "darkred",
       linewidth = 0.7
     ) +
-    sb +
     labs(
       x = "Position (bp)",
       y = "Dxy"
@@ -266,7 +251,8 @@ plots <- lapply(chroms, function(i) {
 
   plot_chr_combined(
     raw_df = raw_df_i,
-    win_df = win_df_i
+    win_df = win_df_i,
+    cutoff99.9 = cutoff99.9_dxy
   )
 })
 names(plots) <- paste0("chr", chroms)
@@ -321,6 +307,12 @@ Dxy_chr1_chr3_2panel <- (final_plots$Chrom1 / final_plots$Chrom3) &
 ggsave(file.path(project_root, "pixy", "Dxy_chr1_chr3_2panel.png"), Dxy_chr1_chr3_2panel,
        device = "png", width = 22, height = 10, units = "cm")
 
+# 2-panel figure: chromosome 1 above chromosome 6 (Dxy)
+Dxy_chr1_chr6_2panel <- (final_plots$Chrom1 / final_plots$Chrom6) &
+  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 15))
+ggsave(file.path(project_root, "pixy", "Dxy_chr1_chr6_2panel.png"), Dxy_chr1_chr6_2panel,
+       device = "png", width = 22, height = 10, units = "cm")
+
 Dxy_LASI_sep_chrs_w.QTL <- final_plots$Chrom1 + final_plots$Chrom2 + final_plots$Chrom3 +
   final_plots$Chrom5 + final_plots$Chrom6 + final_plots$Chrom7 + final_plots$Chrom8 + final_plots$Chrom9
 
@@ -328,14 +320,27 @@ ggsave(file.path(project_root, "pixy", "Dxy_10kb_LASIout_separate_chrs_w.500kb.a
        Dxy_LASI_sep_chrs_w.QTL, device = "png", width = 50, height = 20, units = "cm")
 
 # ---- Fst: plot with QTL ----
-plot_chr_combined <- function(raw_df, win_df) {
-  sb <- scale_bar_2Mb(raw_df, win_df, "avg_wc_fst")
+cutoff99.9_fst <- {
+  x <- pixy_wide$avg_wc_fst
+  x <- pmax(x, 0)
+  quantile(x[is.finite(x)], 0.999)
+}
+
+plot_chr_combined <- function(raw_df, win_df, cutoff99.9) {
   ggplot(raw_df, aes(x = window_pos_1)) +
     geom_point(
+      data = raw_df %>% filter(pmax(avg_wc_fst, 0) <= cutoff99.9),
       aes(y = pmax(avg_wc_fst, 0)),
       size = 1,
       alpha = 0.4,
       color = "grey40"
+    ) +
+    geom_point(
+      data = raw_df %>% filter(pmax(avg_wc_fst, 0) > cutoff99.9),
+      aes(y = pmax(avg_wc_fst, 0)),
+      size = 2,
+      alpha = 0.9,
+      color = "red"
     ) +
     geom_line(
       data = win_df,
@@ -343,7 +348,6 @@ plot_chr_combined <- function(raw_df, win_df) {
       color = "darkred",
       linewidth = 0.7
     ) +
-    sb +
     labs(
       x = "Position (bp)",
       y = "Fst"
@@ -358,7 +362,8 @@ plots <- lapply(chroms, function(i) {
 
   plot_chr_combined(
     raw_df = raw_df_i,
-    win_df = win_df_i
+    win_df = win_df_i,
+    cutoff99.9 = cutoff99.9_fst
   )
 })
 names(plots) <- paste0("chr", chroms)
@@ -384,6 +389,12 @@ names(final_plots) <- paste0("Chrom", chrom_list)
 Fst_chr1_chr3_2panel <- (final_plots$Chrom1 / final_plots$Chrom3) &
   theme(axis.text = element_text(size = 15), axis.title = element_text(size = 15))
 ggsave(file.path(project_root, "pixy", "Fst_chr1_chr3_2panel.png"), Fst_chr1_chr3_2panel,
+       device = "png", width = 22, height = 10, units = "cm")
+
+# 2-panel figure: chromosome 1 above chromosome 6 (Fst)
+Fst_chr1_chr6_2panel <- (final_plots$Chrom1 / final_plots$Chrom6) &
+  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 15))
+ggsave(file.path(project_root, "pixy", "Fst_chr1_chr6_2panel.png"), Fst_chr1_chr6_2panel,
        device = "png", width = 22, height = 10, units = "cm")
 
 Fst_LASI_sep_chrs_w.QTL <- final_plots$Chrom1 + final_plots$Chrom2 + final_plots$Chrom3 +
@@ -416,17 +427,14 @@ qtl_f_dM_bp <- all_QTL_CI %>%
     )
   ) %>%
   ungroup()
-# Density and 5th/95th percentile tails for f_dM (shade outer 5% each tail)
-d_fdM <- density(f_dM_summary$avg_f_dM_per_cM)
+# 5th and 95th percentile cutoffs (red dashed vertical lines)
 p05_fdM <- quantile(f_dM_summary$avg_f_dM_per_cM, 0.05)
 p95_fdM <- quantile(f_dM_summary$avg_f_dM_per_cM, 0.95)
-tail_left_fdM <- data.frame(x = d_fdM$x, y = d_fdM$y) %>% filter(x <= p05_fdM)
-tail_right_fdM <- data.frame(x = d_fdM$x, y = d_fdM$y) %>% filter(x >= p95_fdM)
 
 f_dM_windows_hist_w.QTL.CIs <- ggplot() +
   geom_histogram(data = f_dM_summary, aes(x = avg_f_dM_per_cM, y = after_stat(density)), bins = 50, fill = "grey80", color = "black") +
-  geom_ribbon(data = tail_left_fdM, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.35) +
-  geom_ribbon(data = tail_right_fdM, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.35) +
+  geom_vline(xintercept = p05_fdM, linetype = "dashed", color = "red", linewidth = 0.8) +
+  geom_vline(xintercept = p95_fdM, linetype = "dashed", color = "red", linewidth = 0.8) +
   geom_density(data = f_dM_summary, aes(x = avg_f_dM_per_cM, y = after_stat(density)), color = "darkblue", linewidth = 0.8) +
   geom_vline(data = qtl_f_dM_bp, aes(xintercept = avg_f_dM_QTL, color = trait), linetype = "solid", linewidth = 1) +
   scale_color_manual(values = trait_colors) +
@@ -453,17 +461,14 @@ qtl_dxy_bp <- all_QTL_CI_dxy %>%
     )
   ) %>%
   ungroup()
-# Density and 5th/95th percentile tails for Dxy (shade outer 5% each tail)
-d_dxy <- density(dxy_summary$avg_dxy_per_cM)
+# 5th and 95th percentile cutoffs (red dashed vertical lines)
 p05_dxy <- quantile(dxy_summary$avg_dxy_per_cM, 0.05)
 p95_dxy <- quantile(dxy_summary$avg_dxy_per_cM, 0.95)
-tail_left_dxy <- data.frame(x = d_dxy$x, y = d_dxy$y) %>% filter(x <= p05_dxy)
-tail_right_dxy <- data.frame(x = d_dxy$x, y = d_dxy$y) %>% filter(x >= p95_dxy)
 
 dxy_windows_hist_w.QTL.CIs <- ggplot() +
   geom_histogram(data = dxy_summary, aes(x = avg_dxy_per_cM, y = after_stat(density)), bins = 50, fill = "grey80", color = "black") +
-  geom_ribbon(data = tail_left_dxy, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.35) +
-  geom_ribbon(data = tail_right_dxy, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.35) +
+  geom_vline(xintercept = p05_dxy, linetype = "dashed", color = "red", linewidth = 0.8) +
+  geom_vline(xintercept = p95_dxy, linetype = "dashed", color = "red", linewidth = 0.8) +
   geom_density(data = dxy_summary, aes(x = avg_dxy_per_cM, y = after_stat(density)), color = "darkblue", linewidth = 0.8) +
   geom_vline(data = qtl_dxy_bp, aes(xintercept = avg_dxy_QTL, color = trait), linetype = "solid", linewidth = 1, show.legend = TRUE, key_glyph = "point") +
   scale_color_manual(values = trait_colors) +
@@ -505,17 +510,14 @@ qtl_fst_cm <- all_QTL_CI_fst %>%
     )
   ) %>%
   ungroup()
-# Density and 5th/95th percentile tails for Fst (shade outer 5% each tail)
-d_fst <- density(fst_summary$avg_fst_per_cM)
+# 5th and 95th percentile cutoffs (red dashed vertical lines)
 p05_fst <- quantile(fst_summary$avg_fst_per_cM, 0.05)
 p95_fst <- quantile(fst_summary$avg_fst_per_cM, 0.95)
-tail_left_fst <- data.frame(x = d_fst$x, y = d_fst$y) %>% filter(x <= p05_fst)
-tail_right_fst <- data.frame(x = d_fst$x, y = d_fst$y) %>% filter(x >= p95_fst)
 
 fst_windows_hist_w.QTL.CIs <- ggplot() +
   geom_histogram(data = fst_summary, aes(x = avg_fst_per_cM, y = after_stat(density)), binwidth = 0.01, fill = "grey80", color = "black") +
-  geom_ribbon(data = tail_left_fst, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.35) +
-  geom_ribbon(data = tail_right_fst, aes(x = x, ymin = 0, ymax = y), fill = "red", alpha = 0.35) +
+  geom_vline(xintercept = p05_fst, linetype = "dashed", color = "red", linewidth = 0.8) +
+  geom_vline(xintercept = p95_fst, linetype = "dashed", color = "red", linewidth = 0.8) +
   geom_density(data = fst_summary, aes(x = avg_fst_per_cM, y = after_stat(density)), color = "darkblue", linewidth = 0.8) +
   geom_vline(data = qtl_fst_cm, aes(xintercept = avg_fst_QTL, color = trait), linetype = "solid", linewidth = 1, show.legend = TRUE, key_glyph = "point") +
   scale_color_manual(values = trait_colors, labels = trait_labels) +

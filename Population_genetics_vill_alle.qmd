@@ -111,7 +111,7 @@ variance_explained <- e$values / sum(e$values)
 variance_explained[1]
 
 #number of sites in the dataset:
-num_sites <- "47,820"
+#num_sites <- "47,820"
 
 # With hand pollinated likely backcrosses (vill pollen, hybrid mom)
 ggplot(PC12.AVH, aes(x=PC1, y=PC2, fill=spp)) +
@@ -122,8 +122,7 @@ ggplot(PC12.AVH, aes(x=PC1, y=PC2, fill=spp)) +
   theme(legend.text.align = 0,legend.position = "top") + 
   xlab("PC1 ()") +
   ylab("PC2 (1.9%") + 
-  labs(x = paste0("PC1 (", round(variance_explained[1], 4)*100, "%)"), y = paste0("PC2 (", round(variance_explained[2], 3)*100, "%)")) +
-   annotate("text", x = -0.17, y = 0.21, label = paste("# sites =", num_sites), hjust = 1.1, vjust = -1.5, size = 4, color = "black") #+
+  labs(x = paste0("PC1 (", round(variance_explained[1], 4)*100, "%)"), y = paste0("PC2 (", round(variance_explained[2], 3)*100, "%)"))
   #geom_text_repel(aes(label=ID), size =1.5, nudge_y = 0.03, max.overlaps = 30)
 
 ggsave("ANGSD/PCAngsd_figs/AHV_PCA_260209.png", device = "png", width = 10, height = 7, units = "cm",dpi = 600)
