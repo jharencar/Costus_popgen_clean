@@ -60,11 +60,11 @@ pixy_to_long <- function(pixy_files){
 
 # Paths (edit as needed)
 # Project root: where pixy/ and Dsuite/ output folders live (script's repo)
-project_root <- "/Users/juliaharencar/Documents/Github/Costus_popgen_clean"
-pixy_folder <- "/Users/juliaharencar/Documents/Github/Population_genetics_vill_alle/pixy/output_251124_LASIref"
-dsuite_dir <- "/Users/juliaharencar/Documents/Github/Population_genetics_vill_alle/Dsuite/Fstats_w50s25_Mappability.Depth.Transl.Filtered.LASIref_251120"
-qtl_ci_path <- "/Users/juliaharencar/Documents/Github/alle_vill_QTL/all_QTL_CIs_bp_cm.251130.csv"
-lepmap_dir <- "/Users/juliaharencar/Documents/Github/alle_vill_QTL/lepmap3/best_iter_ordermarkers/"
+project_root <- "/Users/admin-jgharenc/Documents/Github/Costus_popgen_clean"
+pixy_folder <- "/Users/admin-jgharenc/Documents/Github/Population_genetics_vill_alle/pixy/output_251124_LASIref"
+dsuite_dir <- "/Users/admin-jgharenc/Documents/Github/Population_genetics_vill_alle/Dsuite/Fstats_w50s25_Mappability.Depth.Transl.Filtered.LASIref_251120"
+qtl_ci_path <- "/Users/admin-jgharenc/Documents/Github/alle_vill_QTL/all_QTL_CIs_bp_cm.251130.csv"
+lepmap_dir <- "/Users/admin-jgharenc/Documents/Github/alle_vill_QTL/lepmap3/best_iter_ordermarkers/"
 
 # ---- Pixy: import ----
 pixy_files <- list.files(pixy_folder, full.names = TRUE)
@@ -74,6 +74,20 @@ pixy_wide <- pivot_wider(pixy_df, names_from = statistic, values_from = value) %
 # make chromosome number only col:
 pixy_wide <- pixy_wide %>%
   mutate(chrN = as.numeric(str_extract(chromosome, "\\d+")))
+
+# ---- Genome-wide mean Fst (W&C from pixy) ----
+mean_fst_windows <- mean(pixy_wide$avg_wc_fst, na.rm = TRUE)
+mean_fst_snp_weighted <- weighted.mean(
+  pixy_wide$avg_wc_fst,
+  w = pixy_wide$no_snps,
+  na.rm = TRUE
+)
+cat(
+  "Genome-wide mean Fst (alle vs vill):\n",
+  "  mean across 10 kb windows (unweighted) = ", sprintf("%.6f", mean_fst_windows), "\n",
+  "  SNP-weighted mean (weights = no_snps per window) = ", sprintf("%.6f", mean_fst_snp_weighted), "\n",
+  sep = ""
+)
 
 # ---- Dsuite f_dM: load window stats ----
 file_list <- list.files(path = dsuite_dir, pattern = "*.txt", full.names = TRUE)
@@ -104,24 +118,71 @@ axis_set_dsuite <- LASIout_w50s25_all9 %>%
   group_by(chr) %>%
   summarize(center = mean(windowStart_cum), chr_label = first(chr_label))
 
+# x-axis: data limits + slight expand so first/last windows are not clipped at panel edges
 cutoff99.9thPercentile <- quantile(abs(LASIout_w50s25_all9$f_dM[LASIout_w50s25_all9$f_dM < 0]), 0.999)
 
 LASIout_positive <- LASIout_w50s25_all9 %>% filter(f_dM > 0)
 
+fdM_xlim <- range(LASIout_positive$windowStart_cum, na.rm = TRUE)
+
 LASI_99.9thper_w50s25_f_dM <- ggplot(data = LASIout_positive, aes(x = windowStart_cum, y = f_dM, color = as_factor(chr))) +
   geom_point(size = 3) +
-  coord_cartesian(xlim = c(24398, 1120430367)) +
   geom_hline(yintercept = cutoff99.9thPercentile, linetype = "dashed", color = "red") +
   scale_color_manual(values = rep(c("black", "darkgray"), ceiling(length(unique(axis_set_dsuite$chr)) / 2))) +
   guides(color = "none") +
-  geom_point(data = subset(LASIout_positive, f_dM > cutoff99.9thPercentile), color = "red", size = 4.5) +
-  scale_x_continuous(label = axis_set_dsuite$chr_label, breaks = axis_set_dsuite$center) +
+  geom_point(
+    data = subset(LASIout_positive, f_dM > cutoff99.9thPercentile),
+    color = "red",
+    size = 4.5
+  ) +
+  scale_x_continuous(
+    label = axis_set_dsuite$chr_label,
+    breaks = axis_set_dsuite$center,
+    limits = fdM_xlim,
+    expand = expansion(mult = 0.018, add = 0)
+  ) +
+  scale_y_continuous(expand = expansion(mult = 0.06, add = 0)) +
   labs(x = NULL, y = "f_dM") +
-  theme(plot.margin = unit(c(2, 1, 1, 1), "cm"))
+  theme(
+    plot.margin = unit(c(2, 1, 1, 1), "cm"),
+    axis.text = element_text(size = 20 ),
+    axis.title = element_text(size = 22)
+  )
 
 if (!dir.exists(file.path(project_root, "Dsuite"))) dir.create(file.path(project_root, "Dsuite"))
 ggsave(file.path(project_root, "Dsuite", "LASI_99.9thper_w50s25_f_dM_pos_only_all_chroms.png"),
        plot = LASI_99.9thper_w50s25_f_dM,
+       width = 24, height = 3.8, units = "in", dpi = 300)
+
+# ---- Genome-wide f_dM figure (all finite values; negatives included) ----
+LASIout_fd <- LASIout_w50s25_all9 %>% filter(is.finite(f_dM))
+fdM_xlim_all <- range(LASIout_fd$windowStart_cum, na.rm = TRUE)
+cutoff99.9_abs_fdM <- quantile(abs(LASIout_fd$f_dM), 0.999, na.rm = TRUE)
+
+LASI_f_dM_incl_negative <- ggplot(data = LASIout_fd, aes(x = windowStart_cum, y = f_dM, color = as_factor(chr))) +
+  geom_hline(yintercept = 0, color = "grey55", linewidth = 0.35) +
+  geom_point(size = 3) +
+  scale_color_manual(values = rep(c("black", "darkgray"), ceiling(length(unique(axis_set_dsuite$chr)) / 2))) +
+  guides(color = "none") +
+  geom_point(
+    data = LASIout_fd %>% filter(abs(f_dM) > cutoff99.9_abs_fdM),
+    aes(x = windowStart_cum, y = f_dM),
+    inherit.aes = FALSE,
+    color = "red",
+    size = 4.5
+  ) +
+  scale_x_continuous(
+    label = axis_set_dsuite$chr_label,
+    breaks = axis_set_dsuite$center,
+    limits = fdM_xlim_all,
+    expand = expansion(mult = 0.018, add = 0)
+  ) +
+  scale_y_continuous(expand = expansion(mult = 0.06, add = 0)) +
+  labs(x = NULL, y = "f_dM") +
+  theme(plot.margin = unit(c(2, 1, 1, 1), "cm"))
+
+ggsave(file.path(project_root, "Dsuite", "LASI_99.9thper_w50s25_f_dM_incl_negative_all_chroms.png"),
+       plot = LASI_f_dM_incl_negative,
        width = 24, height = 5.5, units = "in", dpi = 300)
 
 # ---- QTL and trait colors (used by along-genome plots and histograms) ----
@@ -130,9 +191,9 @@ all_QTL_CI <- read.csv(qtl_ci_path, header = TRUE) %>%
   filter(!chr == 5 | !trait == "GR")
 trait_colors <- c(
   SD = "#0072B2",
-  GR = "#CC79A7",
+  GR = "#E69F00",
   tough = "#8250C4",
-  Nreabs = "#E69F00",
+  Nreabs = "#CC79A7",
   Chlreabs = "#009E73"
 )
 all_QTL_CI_dxy <- all_QTL_CI %>% filter(!chr == 6 | !trait == "SD")

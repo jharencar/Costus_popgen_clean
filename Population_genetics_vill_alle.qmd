@@ -1185,13 +1185,13 @@ all_QTL_CI <- all_QTL_CI %>%
 # assign a color to each trait
 trait_colors <- c(
   SD = "#0072B2",
-  GR = "#CC79A7",
+  GR = "#E69F00",
   tough = "#8250C4",
-  Nreabs = "#E69F00",
+  Nreabs = "#CC79A7",
   Chlreabs = "#009E73"
 )
 #library(colorblindcheck)
-#colorblindcheck::palette_plot(c("#0072B2", "#CC79A7", "#8250C4", "#E69F00", "#009E73"))
+#colorblindcheck::palette_plot(c("#0072B2", "#E69F00", "#8250C4", "#CC79A7", "#009E73"))
 
 # list of chromosome numbers
 chrom_list <- sort(unique(pos_f_dM_clean$chrN))
@@ -1478,13 +1478,13 @@ all_QTL_CI <- all_QTL_CI %>%
 # assign a color to each trait
 trait_colors <- c(
   SD = "#0072B2",
-  GR = "#CC79A7",
+  GR = "#E69F00",
   tough = "#8250C4",
-  Nreabs = "#E69F00",
+  Nreabs = "#CC79A7",
   Chlreabs = "#009E73"
 )
 #library(colorblindcheck)
-#colorblindcheck::palette_plot(c("#0072B2", "#CC79A7", "#8250C4", "#E69F00", "#009E73"))
+#colorblindcheck::palette_plot(c("#0072B2", "#E69F00", "#8250C4", "#CC79A7", "#009E73"))
 
 # list of chromosome numbers
 chrom_list <- sort(unique(pixy_wide$chrN))
@@ -1620,13 +1620,13 @@ all_QTL_CI <- all_QTL_CI %>%
 # assign a color to each trait
 trait_colors <- c(
   SD = "#0072B2",
-  GR = "#CC79A7",
+  GR = "#E69F00",
   tough = "#8250C4",
-  Nreabs = "#E69F00",
+  Nreabs = "#CC79A7",
   Chlreabs = "#009E73"
 )
 #library(colorblindcheck)
-#colorblindcheck::palette_plot(c("#0072B2", "#CC79A7", "#8250C4", "#E69F00", "#009E73"))
+#colorblindcheck::palette_plot(c("#0072B2", "#E69F00", "#8250C4", "#CC79A7", "#009E73"))
 
 # list of chromosome numbers
 chrom_list <- sort(unique(pixy_wide$chrN))
@@ -1736,13 +1736,13 @@ all_QTL_CI <- all_QTL_CI %>%
 # assign a color to each trait
 trait_colors <- c(
   SD = "#0072B2",
-  GR = "#CC79A7",
+  GR = "#E69F00",
   tough = "#8250C4",
-  Nreabs = "#E69F00",
+  Nreabs = "#CC79A7",
   Chlreabs = "#009E73"
 )
 #library(colorblindcheck)
-#colorblindcheck::palette_plot(c("#0072B2", "#CC79A7", "#8250C4", "#E69F00", "#009E73"))
+#colorblindcheck::palette_plot(c("#0072B2", "#E69F00", "#8250C4", "#CC79A7", "#009E73"))
 
 # list of chromosome names
 chrom_list <- unique(pos_f_dM_chr$chr)
@@ -1970,9 +1970,9 @@ all_QTL_CI <- all_QTL_CI %>%
 # assign a color to each trait
 trait_colors <- c(
   SD = "#0072B2",
-  GR = "#CC79A7",
+  GR = "#E69F00",
   tough = "#8250C4",
-  Nreabs = "#E69F00",
+  Nreabs = "#CC79A7",
   Chlreabs = "#009E73"
 )
 
@@ -2058,9 +2058,9 @@ all_QTL_CI <- all_QTL_CI %>%
 # assign a color to each trait
 trait_colors <- c(
   SD = "#0072B2",
-  GR = "#CC79A7",
+  GR = "#E69F00",
   tough = "#8250C4",
-  Nreabs = "#E69F00",
+  Nreabs = "#CC79A7",
   Chlreabs = "#009E73"
 )
  
@@ -2177,9 +2177,9 @@ all_QTL_CI <- all_QTL_CI %>%
 # assign a color to each trait
 trait_colors <- c(
   SD = "#0072B2",
-  GR = "#CC79A7",
+  GR = "#E69F00",
   tough = "#8250C4",
-  Nreabs = "#E69F00",
+  Nreabs = "#CC79A7",
   Chlreabs = "#009E73"
 )
 
