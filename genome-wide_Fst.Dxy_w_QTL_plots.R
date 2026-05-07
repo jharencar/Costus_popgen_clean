@@ -461,8 +461,8 @@ ggsave(file.path(project_root, "pixy", "Fst_chr1_chr6_2panel.png"), Fst_chr1_chr
 Fst_LASI_sep_chrs_w.QTL <- final_plots$Chrom1 + final_plots$Chrom2 + final_plots$Chrom3 +
   final_plots$Chrom5 + final_plots$Chrom6 + final_plots$Chrom7 + final_plots$Chrom8 + final_plots$Chrom9
 
-ggsave(file.path(project_root, "pixy", "Fst_10kb_LASIout_separate_chrs_w.500kb.avg_7QTL_narrowed.CIs.png"),
-       Fst_LASI_sep_chrs_w.QTL, device = "png", width = 50, height = 20, units = "cm")
+ggsave(file.path(project_root, "pixy", "Fst_10kb_LASIout_separate_chrs_w.500kb.avg_7QTL_narrowed.CIs.pdf"),
+       Fst_LASI_sep_chrs_w.QTL, device = "pdf", width = 30, height = 24, units = "cm")
 
 # ---- Genome-wide distribution: 1 cM window histograms with QTL averages ----
 # f_dM: add cM position (drop chr 4), 1 cM bins, QTL window averages

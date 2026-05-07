@@ -80,91 +80,7 @@ qtl_dsuite <- all_QTL_CI %>%
     peak_cum = peak_bp + windowStart_add
   )
 
-LASI_99.9thper_w50s25_f_dM <- ggplot(
-  data = LASIout_w50s25_all9,
-  aes(x = windowStart_cum, y = f_dM, color = as_factor(chr))
-) +
-  geom_hline(yintercept = 0, color = "grey55", linewidth = 0.35) +
-  geom_point(size = point_size) +
-  coord_cartesian(xlim = c(24398, 1120430367)) +
-  geom_hline(
-    yintercept = c(cutoff99.9thPercentile, -cutoff99.9thPercentile),
-    linetype = "dashed",
-    color = "red"
-  ) +
-  scale_color_manual(values = rep(c("black", "darkgray"), unique(length(axis_set_dsuite$chr)))) +
-  guides(color = "none") +
-  geom_point(
-    data = subset(
-      LASIout_w50s25_all9,
-      f_dM > cutoff99.9thPercentile | f_dM < -cutoff99.9thPercentile
-    ),
-    color = "red",
-    size = point_size
-  ) +
-  scale_x_continuous(label = axis_set_dsuite$chr_label, breaks = axis_set_dsuite$center) +
-  labs(x = NULL, y = "f_dM") +
-  geom_rect(
-    data = qtl_dsuite,
-    aes(xmin = lower95CI_cum, xmax = upper95CI_cum, ymin = -Inf, ymax = Inf),
-    inherit.aes = FALSE,
-    alpha = 0.2,
-    fill = trait_colors[as.character(qtl_dsuite$trait)]
-  ) +
-  geom_vline(
-    data = qtl_dsuite,
-    aes(xintercept = peak_cum),
-    color = trait_colors[as.character(qtl_dsuite$trait)],
-    linewidth = 0.7
-  ) +
-  theme(
-    axis.text = element_text(size = 30),
-    axis.title = element_text(size = 30),
-    plot.margin = unit(c(2, 1, 1, 1), "cm")
-  )
-
-cutoff99.9thPercentile_d_f <- quantile(
-  abs(LASIout_w50s25_all9$d_f[which(LASIout_w50s25_all9$d_f < 0)]),
-  0.999
-)
-
-LASI_99.9thper_w50s25_d_f <- ggplot(
-  data = LASIout_w50s25_all9,
-  aes(x = windowStart_cum, y = d_f, color = as_factor(chr))
-) +
-  geom_point(size = point_size) +
-  coord_cartesian(xlim = c(24398, 1120430367)) +
-  geom_hline(
-    yintercept = c(cutoff99.9thPercentile_d_f, -cutoff99.9thPercentile_d_f),
-    linetype = "dashed",
-    color = "red"
-  ) +
-  scale_color_manual(values = rep(c("black", "darkgray"), unique(length(axis_set_dsuite$chr)))) +
-  guides(color = "none") +
-  geom_point(
-    data = subset(
-      LASIout_w50s25_all9,
-      d_f > cutoff99.9thPercentile_d_f | d_f < -cutoff99.9thPercentile_d_f
-    ),
-    color = "red",
-    size = point_size
-  ) +
-  scale_x_continuous(label = axis_set_dsuite$chr, breaks = axis_set_dsuite$center) +
-  labs(x = NULL, y = "d_f") +
-  geom_rect(
-    data = qtl_dsuite,
-    aes(xmin = lower95CI_cum, xmax = upper95CI_cum, ymin = -Inf, ymax = Inf),
-    inherit.aes = FALSE,
-    alpha = 0.2,
-    fill = trait_colors[as.character(qtl_dsuite$trait)]
-  ) +
-  geom_vline(
-    data = qtl_dsuite,
-    aes(xintercept = peak_cum),
-    color = trait_colors[as.character(qtl_dsuite$trait)],
-    linewidth = 0.7
-  ) +
-  theme(axis.text = element_text(size = 40), axis.title = element_text(size = 40))
+dsuite_xlim <- range(LASIout_w50s25_all9$windowStart_cum, na.rm = TRUE)
 
 # =============================================================================
 # Pixy: Dxy and Fst (from qmd "My plotting to match Dsuite plots"; pi omitted)
@@ -227,12 +143,119 @@ qtl_pixy <- all_QTL_CI %>%
     peak_cum = peak_bp + windowStart_add
   )
 
+pixy_xlim <- range(pixy_wide$windowStart_cum, na.rm = TRUE)
+combo_xlim <- c(
+  min(dsuite_xlim[1], pixy_xlim[1]),
+  max(dsuite_xlim[2], pixy_xlim[2])
+)
+# Data limits + small symmetric buffer (tighter than genome-wide 0.018)
+x_expand <- expansion(mult = 0.012, add = 0)
+
+LASI_99.9thper_w50s25_f_dM <- ggplot(
+  data = LASIout_w50s25_all9,
+  aes(x = windowStart_cum, y = f_dM, color = as_factor(chr))
+) +
+  geom_hline(yintercept = 0, color = "grey55", linewidth = 0.35) +
+  geom_point(size = point_size) +
+  geom_hline(
+    yintercept = c(cutoff99.9thPercentile, -cutoff99.9thPercentile),
+    linetype = "dashed",
+    color = "red"
+  ) +
+  scale_color_manual(values = rep(c("black", "darkgray"), unique(length(axis_set_dsuite$chr)))) +
+  guides(color = "none") +
+  geom_point(
+    data = subset(
+      LASIout_w50s25_all9,
+      f_dM > cutoff99.9thPercentile | f_dM < -cutoff99.9thPercentile
+    ),
+    color = "red",
+    size = point_size
+  ) +
+  scale_x_continuous(
+    label = axis_set_dsuite$chr_label,
+    breaks = axis_set_dsuite$center,
+    limits = combo_xlim,
+    expand = x_expand
+  ) +
+  labs(x = NULL, y = "f_dM") +
+  geom_rect(
+    data = qtl_dsuite,
+    aes(xmin = lower95CI_cum, xmax = upper95CI_cum, ymin = -Inf, ymax = Inf),
+    inherit.aes = FALSE,
+    alpha = 0.2,
+    fill = trait_colors[as.character(qtl_dsuite$trait)]
+  ) +
+  geom_vline(
+    data = qtl_dsuite,
+    aes(xintercept = peak_cum),
+    color = trait_colors[as.character(qtl_dsuite$trait)],
+    linewidth = 0.7
+  ) +
+  theme(
+    axis.text = element_text(size = 30),
+    axis.title = element_text(size = 30),
+    plot.margin = unit(c(2, 1, 1, 1), "cm")
+  )
+
+cutoff99.9thPercentile_d_f <- quantile(
+  abs(LASIout_w50s25_all9$d_f[which(LASIout_w50s25_all9$d_f < 0)]),
+  0.999
+)
+
+LASI_99.9thper_w50s25_d_f <- ggplot(
+  data = LASIout_w50s25_all9,
+  aes(x = windowStart_cum, y = d_f, color = as_factor(chr))
+) +
+  geom_point(size = point_size) +
+  geom_hline(
+    yintercept = c(cutoff99.9thPercentile_d_f, -cutoff99.9thPercentile_d_f),
+    linetype = "dashed",
+    color = "red"
+  ) +
+  scale_color_manual(values = rep(c("black", "darkgray"), unique(length(axis_set_dsuite$chr)))) +
+  guides(color = "none") +
+  geom_point(
+    data = subset(
+      LASIout_w50s25_all9,
+      d_f > cutoff99.9thPercentile_d_f | d_f < -cutoff99.9thPercentile_d_f
+    ),
+    color = "red",
+    size = point_size
+  ) +
+  scale_x_continuous(
+    label = axis_set_dsuite$chr_label,
+    breaks = axis_set_dsuite$center,
+    limits = combo_xlim,
+    expand = x_expand
+  ) +
+  labs(x = NULL, y = "d_f") +
+  geom_rect(
+    data = qtl_dsuite,
+    aes(xmin = lower95CI_cum, xmax = upper95CI_cum, ymin = -Inf, ymax = Inf),
+    inherit.aes = FALSE,
+    alpha = 0.2,
+    fill = trait_colors[as.character(qtl_dsuite$trait)]
+  ) +
+  geom_vline(
+    data = qtl_dsuite,
+    aes(xintercept = peak_cum),
+    color = trait_colors[as.character(qtl_dsuite$trait)],
+    linewidth = 0.7
+  ) +
+  theme(axis.text = element_text(size = 40), axis.title = element_text(size = 40))
+
 cutoff99.9thPercentile.dxy <- quantile(pixy_wide$avg_dxy, 0.999, na.rm = TRUE)
 Dxy_plot <- ggplot(data = pixy_wide, aes(x = windowStart_cum, y = avg_dxy, color = as_factor(chromosome))) +
   geom_point(size = point_size) +
   scale_color_manual(values = rep(c("black", "darkgray"), unique(length(axis_set_pixy$chromosome)))) +
   guides(color = "none") +
-  scale_x_continuous(label = axis_set_pixy$chromosome, breaks = axis_set_pixy$center) +
+  scale_x_continuous(
+    label = axis_set_pixy$chromosome,
+    breaks = axis_set_pixy$center,
+    limits = combo_xlim,
+    expand = x_expand
+  ) +
   labs(x = NULL, y = "Dxy") +
   geom_hline(yintercept = cutoff99.9thPercentile.dxy, linetype = "dashed", color = "red") +
   geom_point(
@@ -261,7 +284,12 @@ wc_fst_plot <- ggplot(data = pixy_wide, aes(x = windowStart_cum, y = avg_wc_fst,
   geom_point(size = point_size) +
   scale_color_manual(values = rep(c("black", "darkgray"), unique(length(axis_set_pixy$chromosome)))) +
   guides(color = "none") +
-  scale_x_continuous(label = axis_set_pixy$chromosome, breaks = axis_set_pixy$center) +
+  scale_x_continuous(
+    label = axis_set_pixy$chromosome,
+    breaks = axis_set_pixy$center,
+    limits = combo_xlim,
+    expand = x_expand
+  ) +
   labs(x = NULL, y = "Fst") +
   geom_hline(
     yintercept = c(upper_99.9thPercentile.fst, lower_99.9thPercentile.fst),
@@ -313,6 +341,7 @@ combo_Dsuite_pixy_4panel_fdm_df_dxy_fst <-
   )
 
 out_png <- file.path(project_root, "combo_Dsuite_pixy_4panel_fdm_df_dxy_fst.png")
+out_pdf <- file.path(project_root, "combo_Dsuite_pixy_4panel_fdm_df_dxy_fst.pdf")
 ggsave(
   out_png,
   combo_Dsuite_pixy_4panel_fdm_df_dxy_fst,
@@ -322,5 +351,15 @@ ggsave(
   units = "cm",
   bg = "white"
 )
+ggsave(
+  out_pdf,
+  combo_Dsuite_pixy_4panel_fdm_df_dxy_fst,
+  device = "pdf",
+  width = 100,
+  height = 70,
+  units = "cm",
+  bg = "white"
+)
 
 message("Wrote ", out_png)
+message("Wrote ", out_pdf)

@@ -44,6 +44,9 @@ ind_files <- list.files(
   full.names = FALSE
 )
 individuals <- sort(sub("\\.posterior$", "", ind_files))
+# Drop pure villosa posteriors: e.g. 19.587.726 is VILL in AHV_260209.pop.info and is
+# not one of the 12 wild HYB individuals shown in the hybrid-focused PCA panel.
+individuals <- individuals[!grepl("_VILL$", individuals)]
 # Strip labels: digits and dots only (narrower facet strip than e.g. 19.516_HYB)
 id_strip_label <- gsub("[^0-9.]", "", individuals)
 
@@ -67,7 +70,7 @@ for (i in seq_along(chr_subdirs)) {
   d0 <- read_ahv_posterior(p)
   chrom <- as.character(unique(d0$chrom)[[1]])
   mx <- max(d0$position)
-  point_col <- if (i %% 2L == 1L) "grey35" else "black"
+  point_col <- if (i %% 2L == 1L) "grey50" else "black"
   chr_band_tbl <- rbind(
     chr_band_tbl,
     data.frame(
@@ -153,7 +156,7 @@ p <- ggplot(plot_df, aes(genome_pos, ancestry)) +
   labs(
     x = "Chromosome",
     y = "Ancestry",
-    title = "wild hybrid aHMM posteriors"
+    title = "Wild hybrid aHMM posteriors"
   ) +
   theme_bw() +
   theme(
