@@ -1,0 +1,6 @@
+"trait","pheno","n_fitqtl","n_complete","n_match"
+"Chlreabs","chloro_reabsorp",373,373,TRUE
+"GR","GR_cm.dy",371,371,TRUE
+"Nreabs","N_reabsorp",340,340,TRUE
+"SD","log_days_to_radicle",377,377,TRUE
+"tough","ave_tough",341,341,TRUE

@@ -5,7 +5,8 @@
 #
 # Single script: (1) imports pixy + Dsuite f_dM once, (2) along-genome Fst/Dxy
 # plots (500 kb window averages + QTL peaks/CIs), (3) 1 cM windowed distribution
-# histograms (Fst, Dxy, f_dM) with QTL window averages, density curves, tail shading.
+# histograms (Fst, Dxy, f_dM) with QTL window averages, density curves, tail shading;
+# (4) Fst at 10 kb (native pixy) with QTL lines at max Fst within each 95% CI.
 #
 # Dependencies: tidyverse, ggplot2, patchwork. Paths below for pixy, Dsuite,
 # QTL CSV, lepmap; ggsave outputs in "pixy/", "Dsuite/", and working directory.
@@ -590,6 +591,113 @@ fst_windows_hist_w.QTL.CIs <- ggplot() +
 # Solo Fst distribution figure
 ggsave(file.path(project_root, "Fst_genomewide_distribution_w_QTL_windows.png"), fst_windows_hist_w.QTL.CIs,
   device = "png", width = 15, height = 5.5, units = "cm")
+
+# ---- Fst: 10 kb window histogram; QTL lines = max Fst window in CI ----
+# Blue curve = geom_density() (kernel-smoothed genome-wide 10 kb Fst PDF).
+# Spike at Fst ~ 0: many windows with Fst = 0 or << 0.01 (low/no allelic differentiation,
+# often few SNPs); binwidth 0.01 stacks those in the leftmost histogram bin.
+max_fst_in_qtl_bp <- function(qtl_rows, fst_df) {
+  qtl_rows %>%
+    rowwise() %>%
+    mutate(
+      max_fst_QTL = max(
+        fst_df$avg_wc_fst[
+          fst_df$chrN == chr &
+            fst_df$window_pos_1 <= upper95CI_bp &
+            fst_df$window_pos_2 >= lower95CI_bp
+        ],
+        na.rm = TRUE
+      )
+    ) %>%
+    ungroup()
+}
+
+mean_fst_in_qtl_bp <- function(qtl_rows, fst_df) {
+  qtl_rows %>%
+    rowwise() %>%
+    mutate(
+      avg_fst_QTL = mean(
+        fst_df$avg_wc_fst[
+          fst_df$chrN == chr &
+            fst_df$window_pos_1 <= upper95CI_bp &
+            fst_df$window_pos_2 >= lower95CI_bp
+        ],
+        na.rm = TRUE
+      )
+    ) %>%
+    ungroup()
+}
+
+make_fst_bp_hist <- function(summary_df, x_col, qtl_df, xlab, outfile) {
+  p05 <- quantile(summary_df[[x_col]], 0.05, na.rm = TRUE)
+  p95 <- quantile(summary_df[[x_col]], 0.95, na.rm = TRUE)
+  p <- ggplot() +
+    geom_histogram(
+      data = summary_df,
+      aes(x = .data[[x_col]], y = after_stat(density)),
+      binwidth = 0.01,
+      fill = "grey80",
+      color = "black"
+    ) +
+    geom_vline(xintercept = p05, linetype = "dashed", color = "red", linewidth = 0.8) +
+    geom_vline(xintercept = p95, linetype = "dashed", color = "red", linewidth = 0.8) +
+    geom_density(
+      data = summary_df,
+      aes(x = .data[[x_col]], y = after_stat(density)),
+      color = "darkblue",
+      linewidth = 0.8
+    ) +
+    geom_vline(
+      data = qtl_df,
+      aes(xintercept = max_fst_QTL, color = trait),
+      linetype = "solid",
+      linewidth = 1,
+      show.legend = TRUE,
+      key_glyph = "point"
+    ) +
+    scale_color_manual(values = trait_colors, labels = trait_labels) +
+    guides(color = guide_legend(override.aes = list(shape = 15, size = 5, linetype = 0))) +
+    labs(x = xlab, y = "probability density", color = "QTL Trait:") +
+    theme(legend.position = "left", legend.justification = "center") +
+    scale_x_continuous(expand = c(-0.01, -0.01))
+  ggsave(outfile, p, device = "png", width = 15, height = 5.5, units = "cm")
+  invisible(p)
+}
+
+# 10 kb: native pixy windows (histogram = per-window Fst; QTL = max window in CI)
+fst_10kb_summary <- fst %>% select(avg_fst = avg_wc_fst)
+qtl_fst_10kb_max <- max_fst_in_qtl_bp(all_QTL_CI_fst, fst)
+fst_10kb_hist <- make_fst_bp_hist(
+  fst_10kb_summary,
+  "avg_fst",
+  qtl_fst_10kb_max,
+  "Fst (10 kb windows)",
+  file.path(project_root, "Fst_genomewide_distribution_10kb_w_QTL_max_windows.png")
+)
+
+# 10 kb: mean Fst across windows in each QTL CI (no genome-wide histogram)
+qtl_fst_10kb_avg <- mean_fst_in_qtl_bp(all_QTL_CI_fst, fst) %>%
+  mutate(qtl_label = paste0(trait, " (chr", chr, ")"))
+fst_10kb_qtl_mean_plot <- ggplot(qtl_fst_10kb_avg, aes(x = avg_fst_QTL, y = reorder(qtl_label, avg_fst_QTL), color = trait)) +
+  geom_segment(aes(x = 0, xend = avg_fst_QTL, y = qtl_label, yend = qtl_label), linewidth = 0.9, color = "grey70") +
+  geom_point(size = 4) +
+  scale_color_manual(values = trait_colors, labels = trait_labels) +
+  labs(
+    x = "Mean Fst (10 kb windows in QTL 95% CI)",
+    y = NULL,
+    color = "QTL Trait:"
+  ) +
+  theme_bw(base_size = 11) +
+  theme(legend.position = "left", legend.justification = "center")
+ggsave(
+  file.path(project_root, "Fst_10kb_QTL_CI_mean_only.png"),
+  fst_10kb_qtl_mean_plot,
+  device = "png",
+  width = 12,
+  height = 6,
+  units = "cm"
+)
+
 # Three-panel: Fst, Dxy, f_dM stacked
 three_panel_hist <- fst_windows_hist_w.QTL.CIs /
   (dxy_windows_hist_w.QTL.CIs + guides(color = "none")) /

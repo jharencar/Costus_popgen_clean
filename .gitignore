@@ -53,3 +53,6 @@ rsconnect/
 # other things to ignore
 *.pdf
 
+# Local R package library (optional; used by QTL heritability scripts)
+R_libs/
+

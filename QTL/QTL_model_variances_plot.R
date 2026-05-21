@@ -21,65 +21,19 @@ if (length(model_files) == 0) {
 }
 message("Found ", length(model_files), " model output file(s).")
 
-#' Parse a single fitqtl summary text file.
-#' Returns list with full_model_pctvar and drop_one (data frame: term, pctvar).
-parse_fitqtl_summary_file <- function(path) {
-  lines <- readLines(path, warn = FALSE)
-  full_pctvar <- NA_real_
-  drop_one <- data.frame(term = character(), pctvar = numeric(), stringsAsFactors = FALSE)
-
-  # Full model: find "Full model result" then the "Model" ANOVA table row (Model + df + SS + ...)
-  in_full <- FALSE
-  for (i in seq_along(lines)) {
-    if (grepl("Full model result", lines[i], fixed = TRUE)) in_full <- TRUE
-    if (in_full && grepl("^Model\\s+", lines[i])) {
-      parts <- strsplit(trimws(lines[i]), "\\s+")[[1]]
-      # Table row has Model, df (integer), SS, MS, LOD, %var; skip "Model formula:" and "Model:  normal"
-      if (length(parts) >= 6 && !is.na(suppressWarnings(as.numeric(parts[2]))))
-        full_pctvar <- as.numeric(parts[6])
-      if (!is.na(full_pctvar)) break
-    }
-  }
-
-  # Drop-one table: between "Drop one QTL at a time" and the short "---" line (not "----...")
-  in_drop <- FALSE
-  for (i in seq_along(lines)) {
-    if (grepl("Drop one QTL at a time", lines[i], fixed = TRUE)) {
-      in_drop <- TRUE
-      next
-    }
-    if (in_drop && trimws(lines[i]) == "---") break
-    if (in_drop && nzchar(trimws(lines[i]))) {
-      parts <- strsplit(trimws(lines[i]), "\\s+")[[1]]
-      # Skip header line
-      if (identical(parts[1], "df") || identical(parts[1], "Model")) next
-      if (length(parts) >= 5 && !is.na(suppressWarnings(as.numeric(parts[2])))) {
-        term <- parts[1]
-        pctvar <- as.numeric(parts[5])  # %var is 5th column in drop-one table
-        if (!is.na(pctvar)) drop_one <- rbind(drop_one, data.frame(term = term, pctvar = pctvar, stringsAsFactors = FALSE))
-      }
-    }
-  }
-
-  list(full_model_pctvar = full_pctvar, drop_one = drop_one)
+utils_path <- if (file.exists("fitqtl_summary_utils.R")) {
+  "fitqtl_summary_utils.R"
+} else {
+  file.path("QTL", "fitqtl_summary_utils.R")
 }
-
-#' Classify drop-one term into component: QTL, other_genotypic, environment.
-classify_term <- function(term) {
-  term <- trimws(term)
-  if (grepl("^[0-9]+@[0-9.]+$", term)) return("QTL")           # e.g. 3@59.2, 1@4.1
-  if (term == "hybrid_index") return("other_genotypic")
-  if (grepl("^F21_", term)) return("other_genotypic")
-  if (grepl("^coh[0-9]+$", term) || grepl("^s\\.coh", term)) return("environment")
-  NA_character_
-}
+source(utils_path, local = TRUE)
+classify_term <- classify_fitqtl_term
 
 # Process each file and build long data for plotting
 plot_data_list <- list()
 for (f in model_files) {
   trait <- sub("_QTL_model_output_251203$", "", f)
   parsed <- parse_fitqtl_summary_file(f)
-
   full_pct <- parsed$full_model_pctvar
   unexplained <- 100 - full_pct
   if (is.na(full_pct)) {
@@ -123,19 +77,10 @@ trait_labels["Chlreabs"] <- "Chl.reabs"
 trait_labels["Nreabs"]   <- "N.reabs"
 
 # Plot: trait on x, % variance on y. Draw Environment (squares) first, then Family (triangles) on top.
-# Colors: Wong/Nature Methods colorblind-friendly palette
-p <- ggplot(plot_data, aes(x = trait, y = pct_var, colour = component, shape = component)) +
-  geom_point(data = filter(plot_data, component != "Family and/or hybrid index"), size = 3.5) +
-  geom_point(data = filter(plot_data, component == "Family and/or hybrid index"), size = 3.5) +
-  scale_colour_manual(
-    values = c(
-      "Unexplained"               = "#666666",
-      "QTL"                       = "#e66400",
-      "Family and/or hybrid index" = "#56B4E9",
-      "Environment"               = "#7fa615"
-    ),
-    name = "Variance component"
-  ) +
+# All points black; Unexplained = open circle (shape 1), others filled.
+p <- ggplot(plot_data, aes(x = trait, y = pct_var, shape = component)) +
+  geom_point(data = filter(plot_data, component != "Family and/or hybrid index"), size = 3.5, colour = "black") +
+  geom_point(data = filter(plot_data, component == "Family and/or hybrid index"), size = 3.5, colour = "black") +
   scale_shape_manual(
     values = c(
       "Unexplained"               = 1,

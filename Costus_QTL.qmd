@@ -1740,11 +1740,34 @@ This section documents how **SNP-based (genomic) heritability** relates to the Q
 
 **Primary definition:** For each trait we fit **y** = **X**β + **g** + **e** with **g** ~ N(0, σ²*g* **G**) and **e** ~ N(0, σ²*e* **I**), where **G** is a VanRaden (method 1) GRM from SNP dosages (A/H/B coded as 0/1/2) after MAF filtering, and **X** contains the **same covariates** as the final per-trait QTL model (seed-cohort / cohort / hybrid index / F2 family indicators as in the model-selection blocks above). **Narrow-sense genomic heritability** is reported as \(\hat{h}^2 = \hat{\sigma}^2_g / (\hat{\sigma}^2_g + \hat{\sigma}^2_e)\). This is **not** *h*² on purely “raw” phenotypes with no nuisance effects, and it is **not** computed on **residuals** from a prior fixed-only regression (which would double-adjust relative to the mixed model). It answers: “additive genetic variance relative to residual variance **after** the same covariate adjustment as QTL mapping.”
 
-### Implementation
+### Implementation (scripts and outputs)
 
-- **Script:** `QTL/genomic_heritability_QTL_traits.R` (run from the repo root: `Rscript QTL/genomic_heritability_QTL_traits.R`). Outputs `QTL/genomic_heritability_QTL_traits.csv` with per-trait *n*, \(\hat{h}^2\), standard error (from `sommer`), and an optional family check (below).
-- **Population scope:** *h*² is defined with respect to **allele frequencies and relatedness in this F3 experimental sample**, not a natural population.
+**Genoprob cross (canonical):** `aHMM_251111_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_most_dups_genoprob.rds` (see `NOTES.md` for all QTL `.rds` variants). Set environment variable `GENOPROB_RDS` if the file is not at the default path in `QTL/genomic_heritability_QTL_traits.R`.
+
+**Run from repo root** (uses project `R_libs/` if present, or your own `qtl` / `sommer` / `rrBLUP` / `lme4`):
+
+```bash
+Rscript QTL/genomic_heritability_QTL_traits.R
+Rscript QTL/genetic_variance_partition.R
+Rscript QTL/build_genetic_architecture_summary.R
+```
+
+| Script | Outputs |
+|--------|---------|
+| `QTL/genomic_heritability_QTL_traits.R` | `QTL_trait_sample_audit.csv`, `genomic_heritability_QTL_traits.csv`, `genomic_heritability_GRM_sensitivity.csv` |
+| `QTL/genetic_variance_partition.R` | `genetic_variance_partition_summary.csv`, `genetic_variance_partition_dropone.csv` |
+| `QTL/build_genetic_architecture_summary.R` | **`genetic_architecture_summary.csv`** (merged) |
+
+**Tier A (primary):** GRM from **dosage** = P(BB) + 0.5×P(AB) at aHMM markers (14,889 after MAF ≥ 0.05, ≤20% missing); `rrBLUP::A.mat` on individuals × markers; REML in **`sommer`** with fixed covariates matching each `*_QTL_model_output_251203` formula. \(\hat{V}_g = \hat{\sigma}^2_g\), \(\hat{V}_{p,\mathrm{cond}} = \hat{\sigma}^2_g + \hat{\sigma}^2_e\), \(\hat{h}^2 = \hat{V}_g / \hat{V}_{p,\mathrm{cond}}\).
+
+**Tier B (supplementary):** Type-III drop-one `%var` from the same fitqtl files → `v_term` and `h2_fixed_approx` (sum of QTL + hybrid_index + F21 increments / total SS). **Not** narrow-sense; can exceed 1 when increments overlap.
+
+**QTL as fraction of genetic variance:** `frac_genetic_QTL` = `pct_QTL` / (`h2` × 100) using Tier A \(\hat{h}^2\) and summed QTL `%var` from drop-one tables.
+
+**GRM sensitivity:** same model with **hard-call** dosages (0/1/2) in `genomic_heritability_GRM_sensitivity.csv` (dosage vs hard \( \hat{h}^2 \)).
+
+**Population scope:** *h*² is defined for **this F3 mapping population** (allele frequencies and relatedness in the experiment), not wild populations.
 
 ### Optional F2-line variance (interpret with caution)
 
-The same script fits `lme4::lmer` with `(1|family)` **in addition to** the same fixed covariates, and reports an intraclass correlation–like ratio Var(family)/(Var(family) + Var(residual)). There are only **five** F2 parent groups, so this component is **imprecise** and **not** interchangeable with genome-wide *h*²; it may be **singular** (zero family variance) when the cohort structure already absorbs line differences.
+The heritability script also fits `lme4::lmer` with `(1|family)` **in addition to** the same fixed covariates, and reports **family_icc** = Var(family)/(Var(family) + Var(residual)). Only **five** F2 lines; **not** interchangeable with GRM *h*² (often high ICC when cohort + F21 fixed effects already explain line differences, e.g. Chlreabs/SD ICC ≈ 0).
