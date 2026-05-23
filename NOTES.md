@@ -155,6 +155,7 @@ Also referenced in [`QTL/plot_GR_Nreabs_qtl_minimal.R`](QTL/plot_GR_Nreabs_qtl_m
 - **`genomic_heritability_QTL_traits.R`** — GRM + `sommer` REML; env `GENOPROB_RDS`; optional project **`R_libs/`** for dependencies.
 - **`genetic_variance_partition.R`** — SS-based supplementary partition from fitqtl drop-one tables.
 - **`build_genetic_architecture_summary.R`** — merges REML + partition → **`genetic_architecture_summary.csv`**.
+- **`genetic_architecture_summary_column_metadata.csv`** + **`genetic_architecture_summary_DATA_DICTIONARY.md`** — column definitions and formulas for the summary table.
 
 ### Conventions
 
@@ -162,6 +163,8 @@ Also referenced in [`QTL/plot_GR_Nreabs_qtl_minimal.R`](QTL/plot_GR_Nreabs_qtl_m
 - **Supplementary** `h2_fixed_approx` from summed Type-III `%var` (QTL + hybrid_index + F21) — can exceed 1; do not treat as \( h^2 \).
 - **`frac_genetic_QTL`** = `pct_QTL` / (`h2` × 100).
 - Sample audit: `QTL_trait_sample_audit.csv` (complete-case `n` must match fitqtl `n` for all five traits).
+
+**SD + hybrid_index (secondary):** `QTL/SD_secondary_hybrid_index_analysis.R` refits SD QTL with `hybrid_index` added to seed-cohort covariates. Outputs: `SD_QTL_model_output_251203_with_hybrid_index`, `SD_hybrid_index_secondary_comparison.csv`, `genetic_architecture_summary_SD_with_HI.csv`. In this run, HI was **not** significant after cohorts in nested `lm` (p ≈ 0.55) and **increased** AIC; QTL `%var` and REML `h2` changed only slightly vs primary.
 
 ### Manuscript vs repo — quick flags
 

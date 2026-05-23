@@ -42,6 +42,11 @@ merged <- merged %>%
   )
 
 out_path <- file.path(qtl_dir, "genetic_architecture_summary.csv")
+meta_path <- file.path(qtl_dir, "genetic_architecture_summary_column_metadata.csv")
 write.csv(merged, out_path, row.names = FALSE)
 message("Saved: ", out_path)
+if (file.exists(meta_path)) {
+  message("Column metadata: ", meta_path)
+  message("Data dictionary: ", file.path(qtl_dir, "genetic_architecture_summary_DATA_DICTIONARY.md"))
+}
 print(merged)

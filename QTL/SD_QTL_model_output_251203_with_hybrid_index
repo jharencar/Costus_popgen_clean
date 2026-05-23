@@ -1,0 +1,63 @@
+SD secondary analysis: hybrid_index added to covariates
+Primary reference: SD_QTL_model_output_251203 (cohorts only)
+
+
+		fitqtl summary
+
+Method: Haley-Knott regression 
+Model:  normal phenotype
+Number of observations : 377 
+
+Full model result
+----------------------------------  
+Model formula: y ~ Q1 + Q2 + hybrid_index + s.coh4 + s.coh7 + s.coh8 + s.coh9 + 
+                    s.coh14 + s.coh15 
+
+       df        SS       MS      LOD     %var Pvalue(Chi2) Pvalue(F)
+Model  11  68.68428 6.244025 37.32367 36.61355            0         0
+Error 365 118.90824 0.325776                                         
+Total 376 187.59252                                                  
+
+
+Drop one QTL at a time ANOVA table: 
+----------------------------------  
+             df Type III SS      LOD     %var F value Pvalue(Chi2) Pvalue(F)
+2@68.6        2    15.59680 10.08977  8.31419 23.9379        0.000  1.70e-10
+6@55.5        2    33.57649 20.36071 17.89863 51.5331        0.000   < 2e-16
+hybrid_index  1     0.34729  0.23875  0.18513  1.0661        0.294  0.302523
+s.coh4        1     4.30365  2.91056  2.29415 13.2104        0.000  0.000318
+s.coh7        1     3.71980  2.52172  1.98291 11.4183        0.001  0.000806
+s.coh8        1     6.00095  4.03059  3.19893 18.4205        0.000  2.27e-05
+s.coh9        1     5.91089  3.97154  3.15092 18.1440        0.000  2.61e-05
+s.coh14       1     0.03871  0.02665  0.02064  0.1188        0.726  0.730512
+s.coh15       1     6.26163  4.20126  3.33789 19.2206        0.000  1.52e-05
+                
+2@68.6       ***
+6@55.5       ***
+hybrid_index    
+s.coh4       ***
+s.coh7       ***
+s.coh8       ***
+s.coh9       ***
+s.coh14         
+s.coh15      ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Estimated effects:
+-----------------
+                  est       SE      t
+Intercept     2.88469  0.14703 19.620
+hybrid_index  0.28553  0.27654  1.032
+s.coh4        0.46848  0.12890  3.635
+s.coh7        0.35214  0.10421  3.379
+s.coh8       -0.47426  0.11050 -4.292
+s.coh9       -0.46885  0.11007 -4.260
+s.coh14      -0.06065  0.17595 -0.345
+s.coh15       0.91448  0.20859  4.384
+2@68.6a      -0.31660  0.04943 -6.404
+2@68.6d      -0.34143  0.07821 -4.366
+6@55.5a       0.48960  0.05305  9.229
+6@55.5d      -0.40227  0.07847 -5.126
+
