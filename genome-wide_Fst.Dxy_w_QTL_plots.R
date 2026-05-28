@@ -64,8 +64,16 @@ pixy_to_long <- function(pixy_files){
 project_root <- "/Users/admin-jgharenc/Documents/Github/Costus_popgen_clean"
 pixy_folder <- "/Users/admin-jgharenc/Documents/Github/Population_genetics_vill_alle/pixy/output_251124_LASIref"
 dsuite_dir <- "/Users/admin-jgharenc/Documents/Github/Population_genetics_vill_alle/Dsuite/Fstats_w50s25_Mappability.Depth.Transl.Filtered.LASIref_251120"
-qtl_ci_path <- "/Users/admin-jgharenc/Documents/Github/alle_vill_QTL/all_QTL_CIs_bp_cm.251130.csv"
+qtl_ci_path <- file.path(project_root, "QTL", "all_QTL_CIs_bp_cm.251130.csv")
+if (!file.exists(qtl_ci_path)) {
+  qtl_ci_path <- "/Users/admin-jgharenc/Documents/Github/alle_vill_QTL/all_QTL_CIs_bp_cm.251130.csv"
+}
 lepmap_dir <- "/Users/admin-jgharenc/Documents/Github/alle_vill_QTL/lepmap3/best_iter_ordermarkers/"
+final_figures_dir <- file.path(
+  Sys.getenv("HOME"),
+  "Library/CloudStorage/GoogleDrive-jgharencar@ucdavis.edu",
+  "My Drive/Costus/PopGen/Figures&Tables/Final_figures"
+)
 
 # ---- Pixy: import ----
 pixy_files <- list.files(pixy_folder, full.names = TRUE)
@@ -442,7 +450,7 @@ for (i in seq_along(chrom_list)) {
     filter(chr == chr_num)
 
   plot_i <- add_qtl_layers(base_plot, qtl_here, trait_colors)
-  plot_i <- plot_i + ggtitle(paste("Chromosome", chr_num))
+  plot_i <- plot_i + ggtitle(paste("Chr", chr_num))
   final_plots[[i]] <- plot_i
 }
 names(final_plots) <- paste0("Chrom", chrom_list)
@@ -459,11 +467,62 @@ Fst_chr1_chr6_2panel <- (final_plots$Chrom1 / final_plots$Chrom6) &
 ggsave(file.path(project_root, "pixy", "Fst_chr1_chr6_2panel.png"), Fst_chr1_chr6_2panel,
        device = "png", width = 22, height = 10, units = "cm")
 
-Fst_LASI_sep_chrs_w.QTL <- final_plots$Chrom1 + final_plots$Chrom2 + final_plots$Chrom3 +
-  final_plots$Chrom5 + final_plots$Chrom6 + final_plots$Chrom7 + final_plots$Chrom8 + final_plots$Chrom9
+# 8 chromosomes in 2x4 grid; shared legend
+fst_sup_theme <- theme(
+  plot.title = element_text(size = 10, hjust = 0.5),
+  axis.title = element_text(size = 9),
+  axis.text = element_text(size = 8),
+  legend.position = "none"
+)
+for (nm in names(final_plots)) {
+  final_plots[[nm]] <- final_plots[[nm]] + fst_sup_theme
+}
 
-ggsave(file.path(project_root, "pixy", "Fst_10kb_LASIout_separate_chrs_w.500kb.avg_7QTL_narrowed.CIs.pdf"),
-       Fst_LASI_sep_chrs_w.QTL, device = "pdf", width = 30, height = 24, units = "cm")
+Fst_LASI_sep_chrs_w.QTL <- (
+  final_plots$Chrom1 + final_plots$Chrom2 + final_plots$Chrom3 + final_plots$Chrom5 +
+  final_plots$Chrom6 + final_plots$Chrom7 + final_plots$Chrom8 + final_plots$Chrom9
+) +
+  plot_layout(ncol = 2, nrow = 4, guides = "collect") &
+  theme(
+    legend.position = "bottom",
+    legend.text = element_text(size = 9),
+    legend.title = element_text(size = 10),
+    plot.title = element_text(size = 10, hjust = 0.5),
+    axis.title = element_text(size = 9),
+    axis.text = element_text(size = 8)
+  )
+
+fst_fig_w_cm <- 22
+fst_fig_h_cm <- 28
+fst_pixy_pdf <- file.path(
+  project_root, "pixy",
+  "Fst_10kb_LASIout_separate_chrs_w.500kb.avg_7QTL_narrowed.CIs.pdf"
+)
+fst_pixy_png <- sub("\\.pdf$", ".png", fst_pixy_pdf)
+
+ggsave(fst_pixy_pdf, Fst_LASI_sep_chrs_w.QTL, device = "pdf", width = fst_fig_w_cm, height = fst_fig_h_cm, units = "cm")
+ggsave(fst_pixy_png, Fst_LASI_sep_chrs_w.QTL, device = "png", width = fst_fig_w_cm, height = fst_fig_h_cm, units = "cm", dpi = 200)
+
+if (dir.exists(final_figures_dir)) {
+  ggsave(
+    file.path(final_figures_dir, "sup_genomewide_Fst_QTL_CIs.pdf"),
+    Fst_LASI_sep_chrs_w.QTL,
+    device = "pdf",
+    width = fst_fig_w_cm,
+    height = fst_fig_h_cm,
+    units = "cm"
+  )
+  ggsave(
+    file.path(final_figures_dir, "sup_genomewide_Fst_QTL_CIs.png"),
+    Fst_LASI_sep_chrs_w.QTL,
+    device = "png",
+    width = fst_fig_w_cm,
+    height = fst_fig_h_cm,
+    units = "cm",
+    dpi = 200
+  )
+  message("Wrote sup_genomewide_Fst_QTL_CIs to ", final_figures_dir)
+}
 
 # ---- Genome-wide distribution: 1 cM window histograms with QTL averages ----
 # f_dM: add cM position (drop chr 4), 1 cM bins, QTL window averages
