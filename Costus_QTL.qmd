@@ -880,6 +880,67 @@ dev.off()
 
 ```
 
+### subset scanone plot (SD, GR, Chlreabs; chr 1/2/3/5/6)
+```{r}
+# Focused supplemental panel: three traits on selected chromosomes only
+subset_chr <- c(1, 2, 3, 5, 6)
+
+subset_scanone <- function(scanone_obj, chr_keep) {
+  scanone_obj[scanone_obj$chr %in% chr_keep, ]
+}
+
+scanone_subset_plots <- list(
+  list(
+    obj = subset_scanone(seed.dormancy.scanone.hk, subset_chr),
+    cutoff = SD_10cutoff_lod,
+    title = "seed dormancy"
+  ),
+  list(
+    obj = subset_scanone(growth.rate.scanone.hk, subset_chr),
+    cutoff = GR_10cutoff_lod,
+    title = "growth rate"
+  ),
+  list(
+    obj = subset_scanone(Chlreabs.scanone.hk, subset_chr),
+    cutoff = Chlreabs_10cutoff_lod,
+    title = "% chlorophyll reabsorption"
+  )
+)
+
+out_pdf <- "./QTL_plots/sup_subset_QTL_scanone_chr12356.pdf"
+out_png <- "./QTL_plots/sup_subset_QTL_scanone_chr12356.png"
+
+pdf(out_pdf, width = 18, height = 12)
+par(mfrow = c(3, 1), mar = c(5, 5, 3.5, 2))
+for (p in scanone_subset_plots) {
+  plot(
+    p$obj,
+    lodcolumn = 1,
+    ylab = "LOD score",
+    main = paste0(p$title, " (chr ", paste(subset_chr, collapse = ","), ")"),
+    cex.lab = 1.2,
+    cex.main = 1.3
+  )
+  abline(h = p$cutoff, col = "red", lwd = 2)
+}
+dev.off()
+
+png(out_png, width = 3000, height = 2200, res = 300)
+par(mfrow = c(3, 1), mar = c(5, 5, 3.5, 2))
+for (p in scanone_subset_plots) {
+  plot(
+    p$obj,
+    lodcolumn = 1,
+    ylab = "LOD score",
+    main = paste0(p$title, " (chr ", paste(subset_chr, collapse = ","), ")"),
+    cex.lab = 1.2,
+    cex.main = 1.3
+  )
+  abline(h = p$cutoff, col = "red", lwd = 2)
+}
+dev.off()
+```
+
 ## 1st models
 ### Seed dormancy
 ```{r}
