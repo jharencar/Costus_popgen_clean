@@ -259,6 +259,111 @@ Also referenced in [`QTL/plot_GR_Nreabs_qtl_minimal.R`](QTL/plot_GR_Nreabs_qtl_m
 
 ---
 
+## Session: Waters mass-alignment chemistry QTL (final)
+
+### Scripts (`QTL/`)
+
+- **`prepare_WatersMass_chemistry.R`** — Read `WatersMassAlingment.xlsx` (sheet `in`); transpose to sample rows; **per-sample max scaling** (divide intensities by sample max; skip if max = 0). Trait names: `row###` from `row ID`. Writes `WatersMass_feature_metadata.csv` (`trait`, `row_ID`, `mz`, `rt`) for Ion Mobility linking. Match `field_ID` → `Lab_ID` via `Kay_lab_database.csv`; merge into `F3phe_onehotcovar_newHI_with_WatersMass_chemistry.csv`.
+- **`WatersMass_chemistry_QTL.R`** — Load canonical **`most_dups_genoprob.rds`** (`GENOPROB_RDS`; fails clearly if missing). Per-trait AIC covariate selection (hybrid index, F21 one-hots, growth `coh*` ≥ 10). `scanone(..., method = "hk")` on mappable features (variance > 0, ≥ 20 non-NA). **`N_PERM`** default **100** (first pass); set **1000** for manuscript run.
+- **`run_WatersMass_chemistry_QTL.slurm`** — **Farm** (`-A jrigrp`, `-p low`, logs in `~/Costus_scripts/slurm_log/`). Prep then QTL; ~hours (100 perm) vs ~24–48 h (1000 perm). Hummingbird used `512x64` + `/hb/groups/kay_lab/R_QTL` (not Farm).
+
+### Farm deployment (`~/Costus_scripts`)
+
+Flat layout (scripts + inputs in one directory) or repo-style `QTL/` subfolder; slurm tries both.
+
+**Required on Farm:**
+
+| File | Notes |
+|------|--------|
+| `run_WatersMass_chemistry_QTL.slurm` | Updated Farm slurm |
+| `prepare_WatersMass_chemistry.R`, `WatersMass_chemistry_QTL.R` | Yes — copy from repo `QTL/` |
+| `log_all_warnings.R` | Yes — warning log utility (same directory as R scripts) |
+| `WatersMassAlingment.xlsx` | Chemistry input |
+| `Kay_lab_database.csv` | ID lookup |
+| `F3phe_onehotcovar_newHI_20250925.csv` | F3 phenotypes + covariates |
+| `aHMM_251111_..._cleaned_most_dups_genoprob.rds` | **~858 MB** canonical cross; **`est.rf` is not enough** |
+
+**Optional (skip prep if already run locally):** copy prep outputs (`WatersMass_feature_metadata.csv`, `F3phe_onehotcovar_newHI_with_WatersMass_chemistry.csv`) and comment out the prep line in slurm.
+
+**Conda:** Farm uses `module load conda` + `conda activate`. Set `CONDA_ENV` to an env with **qtl**, **dplyr**, **tidyr**, **readxl** (Hummingbird: `/hb/groups/kay_lab/R_QTL`).
+
+**Submit:**
+```bash
+mkdir -p ~/Costus_scripts/slurm_log
+cd ~/Costus_scripts
+CONDA_ENV=your_r_qtl_env sbatch run_WatersMass_chemistry_QTL.slurm
+```
+
+**rsync example (from laptop):**
+```bash
+rsync -avP QTL/{prepare_WatersMass_chemistry.R,WatersMass_chemistry_QTL.R,log_all_warnings.R,run_WatersMass_chemistry_QTL.slurm,WatersMassAlingment.xlsx,Kay_lab_database.csv,F3phe_onehotcovar_newHI_20250925.csv} farm:~/Costus_scripts/
+rsync -avP ~/Documents/Github/alle_vill_QTL/aHMM_251111_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_most_dups_genoprob.rds farm:~/Costus_scripts/
+```
+
+### Outputs
+
+| File | Notes |
+|------|--------|
+| `WatersMass_chemistry_warnings.txt` | **All R warnings** (`log_all_warnings.R`; see repo convention below) |
+| `WatersMass_chemistry_scanone_summary.csv` | Max LOD per trait + **mz, rt** |
+| `WatersMass_chemistry_significant_10pct.csv` | 10% LOD FDR + mz/rt + `cutoff_10` |
+| `WatersMass_chemistry_shared_peaks_above50pct.csv` | Shared-peak clusters (15 cM), as prelim |
+| `WatersMass_chemistry_scanone_plots_significant.pdf` | 10% FDR traits only |
+
+Optional multi-QTL (`RUN_MULTI_QTL=1`): `stepwiseqtl` → `refineqtl` → `fitqtl` → `bayesint` for 10% FDR traits only → `WatersMass_chemistry_multi_QTL_models.rds`.
+
+### Match expectations (130 chemistry samples)
+
+- **104/130** Kay `details` → Lab_ID; **83/130** Lab_ID in `F3phe_onehotcovar_newHI_20250925.csv` (same as prelim UV chemistry).
+
+---
+
+## Convention: log all R warnings (batch / HPC scripts)
+
+Long-running or HPC R scripts should record **every** warning to a text file, not only the first 50 echoed to Slurm stdout.
+
+**Utility:** [`QTL/log_all_warnings.R`](QTL/log_all_warnings.R)
+
+At the top of a script (after `library()` calls):
+
+```r
+for (p in c("log_all_warnings.R", file.path("QTL", "log_all_warnings.R"))) {
+  if (file.exists(p)) { source(p, local = FALSE); break }
+}
+start_warning_log(default_basename = "my_script_warnings.txt")
+```
+
+- Sets `options(warn = 1)` so each warning prints when it occurs.
+- `sink(..., type = "message", split = TRUE)` writes warnings to a file **and** stderr (Slurm log still gets them).
+- `on.exit()` closes the log when the script finishes or errors.
+
+**Override path:** `WARNING_LOG=/path/to/warnings.txt Rscript my_script.R`
+
+**Waters chemistry:** `WatersMass_chemistry_warnings.txt`, `prepare_WatersMass_chemistry_warnings.txt` (cwd or `QTL/` on Farm).
+
+**On Farm:** copy `log_all_warnings.R` alongside other scripts in `~/Costus_scripts/`. After a run: `less ~/Costus_scripts/WatersMass_chemistry_warnings.txt`
+
+---
+
 ## How to use this file
 
 - **`AGENTS.md`** and **`CLAUDE.md`** in the repo root tell humans and agents to **read `NOTES.md`** for ongoing project context before making substantive edits.
+
+---
+
+## Session: publication repository cleanup (2026-07-08)
+
+### Layout
+
+Methods-aligned folders `01_`–`04_` under repo root; verbatim pre-cleanup scripts in `_originals/`. See root [`README.md`](README.md) and [`CHANGELOG.md`](CHANGELOG.md).
+
+### Conventions added
+
+- **`scripts/project_paths.R`** — `project_paths()` resolves `PROJECT_ROOT`, pixy/Dsuite/QTL paths from env or repo layout.
+- **Farm slurm** — `run_*.slurm` wrappers with env vars; Hummingbird originals kept alongside.
+- **Sample manifest** — `sample_manifest/combined_sample_manifest.tsv` (524 unique `sample_id` after dedup); `deduplicate_manifest.py` after manual edits.
+- **Avoid Finder on `/Volumes/dissert`** if the volume only appears in Disk Utility/Terminal (can crash Finder). Do publication file work in the git repo; use Terminal for dissert paths.
+
+### QTL scantwo on Farm
+
+Canonical: `03_QTL_mapping/rqtl/run_scantwo_per_trait.R` + `slurm/run_scantwo_all_traits.slurm`. Per-trait Hummingbird `.R`/`.sh` files kept as archives in `03_QTL_mapping/rqtl/`.

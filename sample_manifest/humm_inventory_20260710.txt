@@ -1,0 +1,215 @@
+=== Hummingbird data inventory 2026-07-10T10:14:02-07:00 ===
+
+----------------------------------------
+PATH: /hb/groups/kay_lab/Julia_popgen
+2.0T	/hb/groups/kay_lab/Julia_popgen
+Subdirs (maxdepth 2):
+/hb/groups/kay_lab/Julia_popgen
+/hb/groups/kay_lab/Julia_popgen/aHMM
+/hb/groups/kay_lab/Julia_popgen/aHMM/AHV_LASIref2_260210
+/hb/groups/kay_lab/Julia_popgen/aHMM/AHV_LASIref2_260210_pulse_1.0
+/hb/groups/kay_lab/Julia_popgen/aHMM/old_ploidy
+/hb/groups/kay_lab/Julia_popgen/aHMM/old_.pops
+/hb/groups/kay_lab/Julia_popgen/aHMM/old_posteriors
+/hb/groups/kay_lab/Julia_popgen/aHMM/old_py_test
+/hb/groups/kay_lab/Julia_popgen/aHMM/old_runs
+/hb/groups/kay_lab/Julia_popgen/aHMM/old_vcfs
+/hb/groups/kay_lab/Julia_popgen/aHMM/slurm_log
+/hb/groups/kay_lab/Julia_popgen/aHMM/tmp
+/hb/groups/kay_lab/Julia_popgen/ANGSD
+/hb/groups/kay_lab/Julia_popgen/ANGSD/abba_baba
+/hb/groups/kay_lab/Julia_popgen/ANGSD/angsd_in
+/hb/groups/kay_lab/Julia_popgen/ANGSD/PCAngsd
+/hb/groups/kay_lab/Julia_popgen/ANGSD/QTL_pop
+/hb/groups/kay_lab/Julia_popgen/ANGSD/slurm_log
+/hb/groups/kay_lab/Julia_popgen/chloroplast
+/hb/groups/kay_lab/Julia_popgen/deduped_trimmed
+/hb/groups/kay_lab/Julia_popgen/deduped_trimmed/trash
+/hb/groups/kay_lab/Julia_popgen/deduped_trimmed/trim_Davis_plate1
+/hb/groups/kay_lab/Julia_popgen/deduped_trimmed/trim_plate1
+/hb/groups/kay_lab/Julia_popgen/deduped_trimmed/trim_plate2
+/hb/groups/kay_lab/Julia_popgen/Dsuite
+/hb/groups/kay_lab/Julia_popgen/Dsuite/trash
+/hb/groups/kay_lab/Julia_popgen/lepmap
+/hb/groups/kay_lab/Julia_popgen/mapped
+/hb/groups/kay_lab/Julia_popgen/mapped/cleaned_combined_OGplates_Davis1
+/hb/groups/kay_lab/Julia_popgen/old_aHMM_stuff
+/hb/groups/kay_lab/Julia_popgen/old_aHMM_stuff/0.01_est_ancestry
+/hb/groups/kay_lab/Julia_popgen/old_aHMM_stuff/0.25_est_ancestry
+/hb/groups/kay_lab/Julia_popgen/old_aHMM_stuff/0.5_est_ancestry_all
+/hb/groups/kay_lab/Julia_popgen/old_aHMM_stuff/0.5_est_ancestry_hybs_only
+/hb/groups/kay_lab/Julia_popgen/old_aHMM_stuff/0.99_est_ancestry
+/hb/groups/kay_lab/Julia_popgen/pixy
+/hb/groups/kay_lab/Julia_popgen/pixy/ALLEref
+/hb/groups/kay_lab/Julia_popgen/pixy/output
+/hb/groups/kay_lab/Julia_popgen/pixy/output_0.2missingness
+/hb/groups/kay_lab/Julia_popgen/pixy/output_latest
+/hb/groups/kay_lab/Julia_popgen/pixy/output_map_filt
+/hb/groups/kay_lab/Julia_popgen/pixy/output_map_filt_1
+/hb/groups/kay_lab/Julia_popgen/pixy/output_map_filt_2
+/hb/groups/kay_lab/Julia_popgen/pixy/output_map_filt_3
+/hb/groups/kay_lab/Julia_popgen/pixy/output_map_filt_4
+/hb/groups/kay_lab/Julia_popgen/pixy/output_map_filt_5
+/hb/groups/kay_lab/Julia_popgen/pixy/output_map_filt_6
+/hb/groups/kay_lab/Julia_popgen/pixy/output_map_filt_7
+/hb/groups/kay_lab/Julia_popgen/pixy/output_map_filt_8
+/hb/groups/kay_lab/Julia_popgen/pixy/output_map_filt_9
+/hb/groups/kay_lab/Julia_popgen/pixy/trash
+/hb/groups/kay_lab/Julia_popgen/raw_data
+/hb/groups/kay_lab/Julia_popgen/raw_data/OG_plate1
+/hb/groups/kay_lab/Julia_popgen/raw_data/OG_plate2
+/hb/groups/kay_lab/Julia_popgen/rqtl
+/hb/groups/kay_lab/Julia_popgen/rqtl/scantwo.perms.done
+/hb/groups/kay_lab/Julia_popgen/rqtl/slurm_files
+/hb/groups/kay_lab/Julia_popgen/VCFs
+/hb/groups/kay_lab/Julia_popgen/VCFs/ALLEref_popgen_VCF_allele_counts
+/hb/groups/kay_lab/Julia_popgen/VCFs/BAVLasi_vcfs_tmp
+/hb/groups/kay_lab/Julia_popgen/VCFs/LASIref_popgen_VCF_allele_counts
+/hb/groups/kay_lab/Julia_popgen/VCFs/old_refV1_bcftools_out_AVonly
+/hb/groups/kay_lab/Julia_popgen/VCFs/old_VCF_stuff
+/hb/groups/kay_lab/Julia_popgen/VCFs/trash
+/hb/groups/kay_lab/Julia_popgen/VCFs/VCF_scripts
+(... truncated if >80 subdirs)
+
+----------------------------------------
+PATH: /hb/scratch/jharenca/QTL_mapping
+2.1T	/hb/scratch/jharenca/QTL_mapping
+Subdirs (maxdepth 2):
+/hb/scratch/jharenca/QTL_mapping
+/hb/scratch/jharenca/QTL_mapping/aHMM
+/hb/scratch/jharenca/QTL_mapping/aHMM/AHV_AIMs_ALLEsub_refV2
+/hb/scratch/jharenca/QTL_mapping/aHMM/ALLEref_shared_homo_sites
+/hb/scratch/jharenca/QTL_mapping/aHMM/ALLEsub_final_params
+/hb/scratch/jharenca/QTL_mapping/aHMM/ALLEsub_refV2_final_params
+/hb/scratch/jharenca/QTL_mapping/aHMM/ALLEsub_refV2_minDP0.5_minDif0.2
+/hb/scratch/jharenca/QTL_mapping/aHMM/ALLEsub_refV2_minDP1.1_minDif0.2_chr9
+/hb/scratch/jharenca/QTL_mapping/aHMM/ALLEsub_refV2_minDP1.1_minDif0.3
+/hb/scratch/jharenca/QTL_mapping/aHMM/ALLEsub_refV2_minDP1.2_minDif0.2
+/hb/scratch/jharenca/QTL_mapping/aHMM/ALLEsub_refV2_minDP1.2_minDif0.3
+/hb/scratch/jharenca/QTL_mapping/aHMM/ALLEsub_refV2_minDP1.2_minDif0.4
+/hb/scratch/jharenca/QTL_mapping/aHMM/ALLEsub_refV2_minDP1.3_minDif0.2
+/hb/scratch/jharenca/QTL_mapping/aHMM/ALLEsub_refV2_minDP1_minDif0.2
+/hb/scratch/jharenca/QTL_mapping/aHMM/ALLEsub_refV2_minDP1_minDif0.3
+/hb/scratch/jharenca/QTL_mapping/aHMM/all_hybs_minGTP17_minDif0.2_minDP0.5
+/hb/scratch/jharenca/QTL_mapping/aHMM/allparents_F1s_minDif0.1_minGTP17_minDP1
+/hb/scratch/jharenca/QTL_mapping/aHMM/chr1
+/hb/scratch/jharenca/QTL_mapping/aHMM/chr10
+/hb/scratch/jharenca/QTL_mapping/aHMM/chr11
+/hb/scratch/jharenca/QTL_mapping/aHMM/chr2
+/hb/scratch/jharenca/QTL_mapping/aHMM/chr2_13MbRmd_ALLEsub_refV2_final_params
+/hb/scratch/jharenca/QTL_mapping/aHMM/chr5
+/hb/scratch/jharenca/QTL_mapping/aHMM/chr6
+/hb/scratch/jharenca/QTL_mapping/aHMM/chr7
+/hb/scratch/jharenca/QTL_mapping/aHMM/chr8
+/hb/scratch/jharenca/QTL_mapping/aHMM/chr9
+/hb/scratch/jharenca/QTL_mapping/aHMM/F1s_minDif0.1_minGTP17_minDP0.6
+/hb/scratch/jharenca/QTL_mapping/aHMM/F1s_minDif0.1_minGTP17_minDP1
+/hb/scratch/jharenca/QTL_mapping/aHMM/F1s_minDif0.1_minGTP18_minDP1
+/hb/scratch/jharenca/QTL_mapping/aHMM/F1s_minDif0.25_minGTP17_minDP0.8
+/hb/scratch/jharenca/QTL_mapping/aHMM/F1s_minDif0.25_minGTP17_minDP1
+/hb/scratch/jharenca/QTL_mapping/aHMM/F1s_minDif0.2_minGT0.8_minDP0.5
+/hb/scratch/jharenca/QTL_mapping/aHMM/F1s_minDif0.2_minGTP17_minDP1
+/hb/scratch/jharenca/QTL_mapping/aHMM/F1s_minDif0.3_minGTP17_minDP1
+/hb/scratch/jharenca/QTL_mapping/aHMM/F1s_minDif0.4_minGTP17
+/hb/scratch/jharenca/QTL_mapping/aHMM/F2s_together_aHMM_minDif0.5_LASIref
+/hb/scratch/jharenca/QTL_mapping/aHMM/filter_for_shared_homo.het
+/hb/scratch/jharenca/QTL_mapping/aHMM/grouped_run_minDif0.7_LASIref
+/hb/scratch/jharenca/QTL_mapping/aHMM/grouped_run_minDif0.7_LASIref_w.F2s
+/hb/scratch/jharenca/QTL_mapping/aHMM/grouped_run_minDif0.7_LASIref_w.F2s_0.05covCO
+/hb/scratch/jharenca/QTL_mapping/aHMM/homo_sites_only_full_run
+/hb/scratch/jharenca/QTL_mapping/aHMM/LDpruned_parentals_F1s_minGTP2_minDif0.2_minDP0.2
+/hb/scratch/jharenca/QTL_mapping/aHMM/LD_pruned_single_samp_ALLEref
+/hb/scratch/jharenca/QTL_mapping/aHMM/LD_prune_parentals
+/hb/scratch/jharenca/QTL_mapping/aHMM/maxCov1000_ALLEsub_refV2_final_params
+/hb/scratch/jharenca/QTL_mapping/aHMM/maxCov100_ALLEsub_refV2_final_params
+/hb/scratch/jharenca/QTL_mapping/aHMM/maxCov500_ALLEsub_refV2_final_params
+/hb/scratch/jharenca/QTL_mapping/aHMM/maxCov50_ALLEsub_refV2_final_params
+/hb/scratch/jharenca/QTL_mapping/aHMM/minFreq_vcf2ahmm_LASIref_single_samp
+/hb/scratch/jharenca/QTL_mapping/aHMM/param_testing_newest_LASIref_single_samp
+/hb/scratch/jharenca/QTL_mapping/aHMM/run_all_single_samp_full_ALLEref_VCF
+/hb/scratch/jharenca/QTL_mapping/aHMM/shared_sites_aHMM
+/hb/scratch/jharenca/QTL_mapping/aHMM/single_samp_full_ALLEref_VCF_test
+/hb/scratch/jharenca/QTL_mapping/aHMM/Spring2025_LASIref_single_samp
+/hb/scratch/jharenca/QTL_mapping/aHMM/test_alle_parents
+/hb/scratch/jharenca/QTL_mapping/aHMM/trash
+/hb/scratch/jharenca/QTL_mapping/aHMM/VCFs_shared_homo_0.99_0.01_COs
+/hb/scratch/jharenca/QTL_mapping/ALLEref_clean_bams
+/hb/scratch/jharenca/QTL_mapping/ALLEref_clean_bams/sneaky_wilsonii_laevis_samps
+/hb/scratch/jharenca/QTL_mapping/clean_bams_ref_v2
+/hb/scratch/jharenca/QTL_mapping/clean_bams_ref_v2/no_F1_vcfs
+/hb/scratch/jharenca/QTL_mapping/clean_bams_ref_v2/raw_vcfs
+/hb/scratch/jharenca/QTL_mapping/clean_bams_ref_v2/tmp
+/hb/scratch/jharenca/QTL_mapping/cleaning
+/hb/scratch/jharenca/QTL_mapping/cleaning/trash
+/hb/scratch/jharenca/QTL_mapping/cleaning/trimmed
+/hb/scratch/jharenca/QTL_mapping/mapping_coverage_filtering
+/hb/scratch/jharenca/QTL_mapping/mapping_coverage_filtering/bam_clean
+/hb/scratch/jharenca/QTL_mapping/VCFs
+/hb/scratch/jharenca/QTL_mapping/VCFs/scripts
+/hb/scratch/jharenca/QTL_mapping/VCFs/sites_bad_cov_filt
+/hb/scratch/jharenca/QTL_mapping/VCFs/trash
+(... truncated if >80 subdirs)
+
+----------------------------------------
+PATH: /hb/scratch/jharenca/vill_alle_plate1
+1.1G	/hb/scratch/jharenca/vill_alle_plate1
+Subdirs (maxdepth 2):
+/hb/scratch/jharenca/vill_alle_plate1
+/hb/scratch/jharenca/vill_alle_plate1/newdata
+/hb/scratch/jharenca/vill_alle_plate1/newdata/whole_plate1_mapping
+(... truncated if >80 subdirs)
+
+----------------------------------------
+PATH: /hb/groups/kay_lab/Davis_data/plates_8.9.10/Data
+194G	/hb/groups/kay_lab/Davis_data/plates_8.9.10/Data
+Subdirs (maxdepth 2):
+/hb/groups/kay_lab/Davis_data/plates_8.9.10/Data
+/hb/groups/kay_lab/Davis_data/plates_8.9.10/Data/fastqc.test
+/hb/groups/kay_lab/Davis_data/plates_8.9.10/Data/index.p10
+/hb/groups/kay_lab/Davis_data/plates_8.9.10/Data/index.p8.9
+/hb/groups/kay_lab/Davis_data/plates_8.9.10/Data/tmp
+(... truncated if >80 subdirs)
+
+----------------------------------------
+PATH: /hb/home/jharenca/pop_gen
+21G	/hb/home/jharenca/pop_gen
+Subdirs (maxdepth 2):
+/hb/home/jharenca/pop_gen
+/hb/home/jharenca/pop_gen/ANGSD
+/hb/home/jharenca/pop_gen/ANGSD/abba_baba
+/hb/home/jharenca/pop_gen/ANGSD/angsd_in
+/hb/home/jharenca/pop_gen/ANGSD/NGSadmix_out
+/hb/home/jharenca/pop_gen/ANGSD/PCAngsd_out
+/hb/home/jharenca/pop_gen/cleaned_bams
+/hb/home/jharenca/pop_gen/cleaned_bams/old_filelists
+/hb/home/jharenca/pop_gen/cleaned_bams/q20co_sml_rds_rmed_NCBI_lasius_v1_ref
+/hb/home/jharenca/pop_gen/cleaned_bams/q20co_sml_rds_rmed_NCBI_lasius_v2_ref
+/hb/home/jharenca/pop_gen/Dsuite
+/hb/home/jharenca/pop_gen/Dsuite/Dsuite_results
+/hb/home/jharenca/pop_gen/Dsuite/Dsuite_scripts
+/hb/home/jharenca/pop_gen/pre-processing_scripts
+/hb/home/jharenca/pop_gen/pre-processing_scripts/post-mapping_cleaning+quality
+/hb/home/jharenca/pop_gen/VCFs
+/hb/home/jharenca/pop_gen/VCFs/aHMM_scripts
+/hb/home/jharenca/pop_gen/VCFs/VCF_filtering
+(... truncated if >80 subdirs)
+
+=== Julia_popgen top-level sizes ===
+6.8M	/hb/groups/kay_lab/Julia_popgen/lepmap
+62M	/hb/groups/kay_lab/Julia_popgen/pixy
+2.2G	/hb/groups/kay_lab/Julia_popgen/rqtl
+3.9G	/hb/groups/kay_lab/Julia_popgen/old_aHMM_stuff
+6.6G	/hb/groups/kay_lab/Julia_popgen/Dsuite
+23G	/hb/groups/kay_lab/Julia_popgen/aHMM
+71G	/hb/groups/kay_lab/Julia_popgen/ANGSD
+101G	/hb/groups/kay_lab/Julia_popgen/raw_data
+119G	/hb/groups/kay_lab/Julia_popgen/mapped
+338G	/hb/groups/kay_lab/Julia_popgen/chloroplast
+412G	/hb/groups/kay_lab/Julia_popgen/VCFs
+922G	/hb/groups/kay_lab/Julia_popgen/deduped_trimmed
+
+=== Key file globs (count) ===
+/hb/groups/kay_lab/Julia_popgen/VCFs/*.vcf.gz: 237
+/hb/groups/kay_lab/Julia_popgen/rqtl/*.rds: 14
+/hb/scratch/jharenca/QTL_mapping/aHMM/grouped_run_minDif0.7_LASIref_w.F2s_0.05covCO/no_thin_cated_posteriors_minDif0.7_grp_allF2s_CO0.05/*posterior: 0
+0

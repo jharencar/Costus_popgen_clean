@@ -56,3 +56,16 @@ rsconnect/
 # Local R package library (optional; used by QTL heritability scripts)
 R_libs/
 
+
+# Publication repo: large analysis outputs
+*.vcf
+*.vcf.gz
+*.vcf.gz.tbi
+*.posterior
+*.bam
+*.bai
+slurm_log/
+**/scantwo.perms/
+
+# macOS
+.DS_Store
