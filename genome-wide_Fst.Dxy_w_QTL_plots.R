@@ -8,7 +8,7 @@
 # histograms (Fst, Dxy, f_dM) with QTL window averages, density curves, tail shading;
 # (4) Fst at 10 kb (native pixy) with QTL lines at max Fst within each 95% CI.
 #
-# Dependencies: tidyverse, ggplot2, patchwork. Paths below for pixy, Dsuite,
+# Dependencies: tidyverse, ggplot2, patchwork, ggrastr (rasterized points on Fst panels).
 # QTL CSV, lepmap; ggsave outputs in "pixy/", "Dsuite/", and working directory.
 # =============================================================================
 
@@ -17,8 +17,10 @@ library(tidyverse)
 library(ggplot2)
 library(patchwork)
 library(cowplot)
+library(ggrastr)
 
 theme_set(theme_bw(base_size = 11))
+fst_raster_dpi <- 300
 
 # ---- pixy: import data ----
 # function from the pixy website (https://pixy.readthedocs.io/en/latest/plotting.html)
@@ -62,8 +64,12 @@ pixy_to_long <- function(pixy_files){
 # Paths (edit as needed)
 # Project root: where pixy/ and Dsuite/ output folders live (script's repo)
 project_root <- "/Users/admin-jgharenc/Documents/Github/Costus_popgen_clean"
-pixy_folder <- "/Users/admin-jgharenc/Documents/Github/Population_genetics_vill_alle/pixy/output_251124_LASIref"
-dsuite_dir <- "/Users/admin-jgharenc/Documents/Github/Population_genetics_vill_alle/Dsuite/Fstats_w50s25_Mappability.Depth.Transl.Filtered.LASIref_251120"
+pixy_folder <- file.path(project_root, "pixy", "output_251124_LASIref")
+dsuite_dir <- file.path(
+  project_root,
+  "Dsuite",
+  "Fstats_w50s25_Mappability.Depth.Transl.Filtered.LASIref_251120"
+)
 qtl_ci_path <- file.path(project_root, "QTL", "all_QTL_CIs_bp_cm.251130.csv")
 if (!file.exists(qtl_ci_path)) {
   qtl_ci_path <- "/Users/admin-jgharenc/Documents/Github/alle_vill_QTL/all_QTL_CIs_bp_cm.251130.csv"
@@ -205,8 +211,6 @@ trait_colors <- c(
   Nreabs = "#CC79A7",
   Chlreabs = "#009E73"
 )
-all_QTL_CI_dxy <- all_QTL_CI %>% filter(!chr == 6 | !trait == "SD")
-all_QTL_CI_fst <- all_QTL_CI %>% filter(!chr == 6 | !trait == "SD")
 
 # ---- cM map (for 1 cM windowed histograms) ----
 lepmap_files <- list.files(lepmap_dir, pattern = "*_clean_LodLim11_theta0.001_allF2s_0.5covCO_withRef.txt", full.names = TRUE)
@@ -355,6 +359,36 @@ add_qtl_layers <- function(base_plot, qtl_rows, trait_colors) {
     scale_color_manual(values = trait_colors)
 }
 
+# Fst supplement: merged fill+color legend (CI band + peak line), collected once below grid
+add_qtl_layers_fst <- function(base_plot, qtl_rows, trait_colors) {
+  if (nrow(qtl_rows) == 0) {
+    return(base_plot + theme(legend.position = "none"))
+  }
+
+  base_plot +
+    geom_rect(
+      data = qtl_rows,
+      aes(
+        xmin = lower95CI_bp,
+        xmax = upper95CI_bp,
+        ymin = -Inf,
+        ymax = Inf,
+        fill = trait
+      ),
+      inherit.aes = FALSE,
+      alpha = 0.2
+    ) +
+    geom_vline(
+      data = qtl_rows,
+      aes(xintercept = peak_bp, color = trait),
+      linewidth = 1,
+      inherit.aes = FALSE
+    ) +
+    scale_fill_manual(values = trait_colors, name = NULL, drop = FALSE) +
+    scale_color_manual(values = trait_colors, name = NULL, drop = FALSE) +
+    theme(legend.position = "none")
+}
+
 final_plots <- list()
 
 for (i in seq_along(chrom_list)) {
@@ -398,19 +432,21 @@ cutoff99.9_fst <- {
 
 plot_chr_combined <- function(raw_df, win_df, cutoff99.9) {
   ggplot(raw_df, aes(x = window_pos_1)) +
-    geom_point(
+    geom_point_rast(
       data = raw_df %>% filter(pmax(avg_wc_fst, 0) <= cutoff99.9),
       aes(y = pmax(avg_wc_fst, 0)),
       size = 1,
       alpha = 0.4,
-      color = "grey40"
+      color = "grey40",
+      raster.dpi = fst_raster_dpi
     ) +
-    geom_point(
+    geom_point_rast(
       data = raw_df %>% filter(pmax(avg_wc_fst, 0) > cutoff99.9),
       aes(y = pmax(avg_wc_fst, 0)),
       size = 2,
       alpha = 0.9,
-      color = "red"
+      color = "red",
+      raster.dpi = fst_raster_dpi
     ) +
     geom_line(
       data = win_df,
@@ -449,7 +485,7 @@ for (i in seq_along(chrom_list)) {
   qtl_here <- all_QTL_CI %>%
     filter(chr == chr_num)
 
-  plot_i <- add_qtl_layers(base_plot, qtl_here, trait_colors)
+  plot_i <- add_qtl_layers_fst(base_plot, qtl_here, trait_colors)
   plot_i <- plot_i + ggtitle(paste("Chr", chr_num))
   final_plots[[i]] <- plot_i
 }
@@ -467,7 +503,7 @@ Fst_chr1_chr6_2panel <- (final_plots$Chrom1 / final_plots$Chrom6) &
 ggsave(file.path(project_root, "pixy", "Fst_chr1_chr6_2panel.png"), Fst_chr1_chr6_2panel,
        device = "png", width = 22, height = 10, units = "cm")
 
-# 8 chromosomes in 2x4 grid; shared legend
+# 8 chromosomes in 2x4 grid; one shared legend (not collected per panel — avoids duplicate traits)
 fst_sup_theme <- theme(
   plot.title = element_text(size = 10, hjust = 0.5),
   axis.title = element_text(size = 9),
@@ -478,19 +514,53 @@ for (nm in names(final_plots)) {
   final_plots[[nm]] <- final_plots[[nm]] + fst_sup_theme
 }
 
-Fst_LASI_sep_chrs_w.QTL <- (
-  final_plots$Chrom1 + final_plots$Chrom2 + final_plots$Chrom3 + final_plots$Chrom5 +
-  final_plots$Chrom6 + final_plots$Chrom7 + final_plots$Chrom8 + final_plots$Chrom9
-) +
-  plot_layout(ncol = 2, nrow = 4, guides = "collect") &
+qtl_legend_df <- tibble(
+  trait = factor(names(trait_colors), levels = names(trait_colors)),
+  lower95CI_bp = seq_along(trait_colors),
+  upper95CI_bp = seq_along(trait_colors) + 1,
+  peak_bp = seq_along(trait_colors) + 0.5
+)
+fst_qtl_legend_plot <- ggplot() +
+  geom_rect(
+    data = qtl_legend_df,
+    aes(
+      xmin = lower95CI_bp,
+      xmax = upper95CI_bp,
+      ymin = -Inf,
+      ymax = Inf,
+      fill = trait
+    ),
+    alpha = 0.2
+  ) +
+  geom_vline(
+    data = qtl_legend_df,
+    aes(xintercept = peak_bp, color = trait),
+    linewidth = 1
+  ) +
+  scale_fill_manual(values = trait_colors, name = NULL, drop = FALSE) +
+  scale_color_manual(values = trait_colors, name = NULL, drop = FALSE) +
+  theme_void() +
   theme(
     legend.position = "bottom",
     legend.text = element_text(size = 9),
-    legend.title = element_text(size = 10),
+    legend.title = element_blank()
+  )
+fst_legend_grob <- get_legend(fst_qtl_legend_plot)
+
+fst_panels <- (
+  final_plots$Chrom1 + final_plots$Chrom2 + final_plots$Chrom3 + final_plots$Chrom5 +
+  final_plots$Chrom6 + final_plots$Chrom7 + final_plots$Chrom8 + final_plots$Chrom9
+) +
+  plot_layout(ncol = 2, nrow = 4) &
+  theme(
     plot.title = element_text(size = 10, hjust = 0.5),
     axis.title = element_text(size = 9),
-    axis.text = element_text(size = 8)
+    axis.text = element_text(size = 8),
+    legend.position = "none"
   )
+
+Fst_LASI_sep_chrs_w.QTL <- fst_panels / wrap_elements(full = fst_legend_grob) +
+  plot_layout(heights = c(1, 0.06), guides = "keep")
 
 fst_fig_w_cm <- 22
 fst_fig_h_cm <- 28
@@ -512,19 +582,14 @@ if (dir.exists(final_figures_dir)) {
     height = fst_fig_h_cm,
     units = "cm"
   )
-  ggsave(
-    file.path(final_figures_dir, "sup_genomewide_Fst_QTL_CIs.png"),
-    Fst_LASI_sep_chrs_w.QTL,
-    device = "png",
-    width = fst_fig_w_cm,
-    height = fst_fig_h_cm,
-    units = "cm",
-    dpi = 200
-  )
   message("Wrote sup_genomewide_Fst_QTL_CIs to ", final_figures_dir)
 }
 
 # ---- Genome-wide distribution: 1 cM window histograms with QTL averages ----
+trait_labels <- c(
+  SD = "Seed dormancy", GR = "Growth rate", tough = "Leaf toughness",
+  Nreabs = "Nitrogen reabsorption\nduring drought", Chlreabs = "Chlorophyll reabsorption\nduring drought"
+)
 # f_dM: add cM position (drop chr 4), 1 cM bins, QTL window averages
 pos_f_dM_clean <- pos_f_dM_clean %>%
   filter(chrN != 4) %>%
@@ -539,7 +604,7 @@ qtl_f_dM_bp <- all_QTL_CI %>%
   rowwise() %>%
   mutate(
     avg_f_dM_QTL = mean(
-      pos_f_dM_clean$f_dM[
+      pos_f_dM_clean$f_dM_pos[
         pos_f_dM_clean$chrN == chr &
           pos_f_dM_clean$windowStart <= upper95CI_bp &
           pos_f_dM_clean$windowEnd >= lower95CI_bp
@@ -548,20 +613,22 @@ qtl_f_dM_bp <- all_QTL_CI %>%
     )
   ) %>%
   ungroup()
-# 5th and 95th percentile cutoffs (red dashed vertical lines)
+# 5th and 95th percentile cutoffs (red tail shading)
 p05_fdM <- quantile(f_dM_summary$avg_f_dM_per_cM, 0.05)
 p95_fdM <- quantile(f_dM_summary$avg_f_dM_per_cM, 0.95)
 
 f_dM_windows_hist_w.QTL.CIs <- ggplot() +
+  annotate("rect", xmin = -Inf, xmax = p05_fdM, ymin = -Inf, ymax = Inf, fill = "red", alpha = 0.12) +
+  annotate("rect", xmin = p95_fdM, xmax = Inf, ymin = -Inf, ymax = Inf, fill = "red", alpha = 0.12) +
   geom_histogram(data = f_dM_summary, aes(x = avg_f_dM_per_cM, y = after_stat(density)), bins = 50, fill = "grey80", color = "black") +
-  geom_vline(xintercept = p05_fdM, linetype = "dashed", color = "red", linewidth = 0.8) +
-  geom_vline(xintercept = p95_fdM, linetype = "dashed", color = "red", linewidth = 0.8) +
   geom_density(data = f_dM_summary, aes(x = avg_f_dM_per_cM, y = after_stat(density)), color = "darkblue", linewidth = 0.8) +
-  geom_vline(data = qtl_f_dM_bp, aes(xintercept = avg_f_dM_QTL, color = trait), linetype = "solid", linewidth = 1) +
-  scale_color_manual(values = trait_colors) +
-  labs(x = "average f_dM", y = "frequency", color = "Trait")
+  geom_vline(data = qtl_f_dM_bp, aes(xintercept = avg_f_dM_QTL, color = trait), linetype = "solid", linewidth = 1, show.legend = TRUE, key_glyph = "point") +
+  scale_color_manual(values = trait_colors, labels = trait_labels) +
+  guides(color = guide_legend(override.aes = list(shape = 15, size = 5, linetype = 0))) +
+  labs(x = expression(italic(f)[d * M] ~ "(1 cM windows)"), y = "probability density", color = "QTL Trait:") +
+  theme(legend.position = "left", legend.justification = "center")
 
-# Dxy: 1 cM bins, QTL window averages (all_QTL_CI_dxy)
+# Dxy: 1 cM bins, QTL window averages (all_QTL_CI)
 dxy <- pixy_wide %>%
   filter(is.finite(avg_dxy), chromosome != "Chrom4") %>%
   mutate(window_center = chr_position * 10e5) %>%
@@ -573,7 +640,7 @@ dxy_summary <- dxy %>%
   mutate(cM_bin = floor(cM_window_start)) %>%
   group_by(chrN, cM_bin) %>%
   summarise(avg_dxy_per_cM = mean(avg_dxy, na.rm = TRUE), n_windows = n(), .groups = "drop")
-qtl_dxy_bp <- all_QTL_CI_dxy %>%
+qtl_dxy_bp <- all_QTL_CI %>%
   rowwise() %>%
   mutate(
     avg_dxy_QTL = mean(
@@ -582,22 +649,22 @@ qtl_dxy_bp <- all_QTL_CI_dxy %>%
     )
   ) %>%
   ungroup()
-# 5th and 95th percentile cutoffs (red dashed vertical lines)
+# 5th and 95th percentile cutoffs (red tail shading)
 p05_dxy <- quantile(dxy_summary$avg_dxy_per_cM, 0.05)
 p95_dxy <- quantile(dxy_summary$avg_dxy_per_cM, 0.95)
 
 dxy_windows_hist_w.QTL.CIs <- ggplot() +
+  annotate("rect", xmin = -Inf, xmax = p05_dxy, ymin = -Inf, ymax = Inf, fill = "red", alpha = 0.12) +
+  annotate("rect", xmin = p95_dxy, xmax = Inf, ymin = -Inf, ymax = Inf, fill = "red", alpha = 0.12) +
   geom_histogram(data = dxy_summary, aes(x = avg_dxy_per_cM, y = after_stat(density)), bins = 50, fill = "grey80", color = "black") +
-  geom_vline(xintercept = p05_dxy, linetype = "dashed", color = "red", linewidth = 0.8) +
-  geom_vline(xintercept = p95_dxy, linetype = "dashed", color = "red", linewidth = 0.8) +
   geom_density(data = dxy_summary, aes(x = avg_dxy_per_cM, y = after_stat(density)), color = "darkblue", linewidth = 0.8) +
   geom_vline(data = qtl_dxy_bp, aes(xintercept = avg_dxy_QTL, color = trait), linetype = "solid", linewidth = 1, show.legend = TRUE, key_glyph = "point") +
-  scale_color_manual(values = trait_colors) +
+  scale_color_manual(values = trait_colors, labels = trait_labels) +
   guides(color = guide_legend(override.aes = list(shape = 15, size = 5, linetype = 0))) +
-  labs(x = "average Dxy", y = "frequency", color = "Trait") +
-  theme(legend.position = "right", legend.justification = "center")
+  labs(x = expression(italic(D)[xy] ~ "(1 cM windows)"), y = "probability density", color = "QTL Trait:") +
+  theme(legend.position = "left", legend.justification = "center")
 
-# Fst: 1 cM bins, QTL window averages in cM (all_QTL_CI_fst)
+# Fst: 1 cM bins, QTL window averages in cM (all_QTL_CI)
 fst <- pixy_wide %>%
   filter(is.finite(avg_wc_fst), chromosome != "Chrom4") %>%
   mutate(window_center = chr_position * 10e5) %>%
@@ -609,16 +676,12 @@ fst_summary <- fst %>%
   mutate(cM_bin = floor(cM_window_start)) %>%
   group_by(chrN, cM_bin) %>%
   summarise(avg_fst_per_cM = mean(avg_wc_fst, na.rm = TRUE), n_windows = n(), .groups = "drop")
-trait_labels <- c(
-  SD = "Seed dormancy", GR = "Growth rate", tough = "Leaf toughness",
-  Nreabs = "Nitrogen reabsorption\nduring drought", Chlreabs = "Chlorophyll reabsorption\nduring drought"
-)
 fst_cm <- fst %>%
   arrange(chrN, cM_window_start) %>%
   group_by(chrN) %>%
   mutate(cM_window_end = lead(cM_window_start)) %>%
   ungroup()
-qtl_fst_cm <- all_QTL_CI_fst %>%
+qtl_fst_cm <- all_QTL_CI %>%
   rowwise() %>%
   mutate(
     avg_fst_QTL = mean(
@@ -725,7 +788,7 @@ make_fst_bp_hist <- function(summary_df, x_col, qtl_df, xlab, outfile) {
 
 # 10 kb: native pixy windows (histogram = per-window Fst; QTL = max window in CI)
 fst_10kb_summary <- fst %>% select(avg_fst = avg_wc_fst)
-qtl_fst_10kb_max <- max_fst_in_qtl_bp(all_QTL_CI_fst, fst)
+qtl_fst_10kb_max <- max_fst_in_qtl_bp(all_QTL_CI, fst)
 fst_10kb_hist <- make_fst_bp_hist(
   fst_10kb_summary,
   "avg_fst",
@@ -735,7 +798,7 @@ fst_10kb_hist <- make_fst_bp_hist(
 )
 
 # 10 kb: mean Fst across windows in each QTL CI (no genome-wide histogram)
-qtl_fst_10kb_avg <- mean_fst_in_qtl_bp(all_QTL_CI_fst, fst) %>%
+qtl_fst_10kb_avg <- mean_fst_in_qtl_bp(all_QTL_CI, fst) %>%
   mutate(qtl_label = paste0(trait, " (chr", chr, ")"))
 fst_10kb_qtl_mean_plot <- ggplot(qtl_fst_10kb_avg, aes(x = avg_fst_QTL, y = reorder(qtl_label, avg_fst_QTL), color = trait)) +
   geom_segment(aes(x = 0, xend = avg_fst_QTL, y = qtl_label, yend = qtl_label), linewidth = 0.9, color = "grey70") +
@@ -764,3 +827,47 @@ three_panel_hist <- fst_windows_hist_w.QTL.CIs /
   plot_layout(guides = "collect")
 ggsave(file.path(project_root, "Fst_Dxy_fdM_genomewide_distribution_w_QTL_3panel.png"), three_panel_hist,
   device = "png", width = 17, height = 18, units = "cm")
+
+# Two-panel supplement: Dxy and f_dM (1 cM window distributions vs QTL window means)
+dxy_fdM_hist_w.QTL.CIs <- dxy_windows_hist_w.QTL.CIs /
+  (f_dM_windows_hist_w.QTL.CIs + guides(color = "none")) +
+  plot_layout(guides = "collect") &
+  theme(
+    axis.title = element_text(size = 10),
+    axis.text = element_text(size = 9),
+    legend.text = element_text(size = 8)
+  )
+
+dxy_fdM_fig_w_cm <- 17
+dxy_fdM_fig_h_cm <- 12
+dxy_fdM_repo_png <- file.path(project_root, "Dxy_fdM_genomewide_distribution_w_QTL_2panel.png")
+ggsave(
+  dxy_fdM_repo_png,
+  dxy_fdM_hist_w.QTL.CIs,
+  device = "png",
+  width = dxy_fdM_fig_w_cm,
+  height = dxy_fdM_fig_h_cm,
+  units = "cm",
+  dpi = 200
+)
+
+if (dir.exists(final_figures_dir)) {
+  ggsave(
+    file.path(final_figures_dir, "sup_Dxy_fdM_QTL_window_distributions.pdf"),
+    dxy_fdM_hist_w.QTL.CIs,
+    device = "pdf",
+    width = dxy_fdM_fig_w_cm,
+    height = dxy_fdM_fig_h_cm,
+    units = "cm"
+  )
+  ggsave(
+    file.path(final_figures_dir, "sup_Dxy_fdM_QTL_window_distributions.png"),
+    dxy_fdM_hist_w.QTL.CIs,
+    device = "png",
+    width = dxy_fdM_fig_w_cm,
+    height = dxy_fdM_fig_h_cm,
+    units = "cm",
+    dpi = 200
+  )
+  message("Wrote sup_Dxy_fdM_QTL_window_distributions to ", final_figures_dir)
+}

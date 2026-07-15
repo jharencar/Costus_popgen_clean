@@ -1,0 +1,55 @@
+row_ID,tier,tier_group,recommended_shortlist,chr,lod,pathway,superclass,chem_class,notes,mz,rt,waters_mz,waters_rt,max,SUM
+3007,A,alkaloid,True,5,11.37008549,Alkaloids,Guanidine alkaloids,Imidazole alkaloids,,297.2377939,22.541517,297.2,22.5,892051.06,8245638.252
+3092,A,alkaloid,True,5,8.740525961,Alkaloids,Guanidine alkaloids,Imidazole alkaloids,,305.1649531,21.251587,305.1,21.2,321216.78,8979047.407
+3035,A,alkaloid,True,5,6.431815724,Alkaloids,Guanidine alkaloids,Imidazole alkaloids,,307.1826309,21.204308,307.1,21.2,346511.97,32218584.93
+2321,A,alkaloid,True,7,6.10023515,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,280.2589395,23.254126,280.2,23.2,187098.03,7510928.089
+13585,A,alkaloid,False,3,4.535004625,Alkaloids,Pseudoalkaloids (transamidation),Polyamines,,341.1080879,3.8027155,341.1,3.8,353527.3,39481677.68
+11855,A,alkaloid,False,3,4.190204023,Alkaloids,Pseudoalkaloids (transamidation),Polyamines,,341.11253,0.6148759,341.1,0.6,706164.44,12727442.76
+13523,A,alkaloid,True,5,4.130952586,Alkaloids,Guanidine alkaloids,Imidazole alkaloids,,307.1871672,21.428608,307.1,21.4,426266.34,4618003.013
+13415,A,alkaloid,False,3,4.090317506,Alkaloids,Pseudoalkaloids (transamidation),Polyamines,,341.2546212,21.3406,341.2,21.3,241002.31,6818200.104
+11771,A,alkaloid,False,3,3.968526229,Alkaloids,Nicotinic acid alkaloids,Cyclic peptides,,343.1717021,15.264095,343.1,15.2,297542.16,2706018.037
+3459,A,alkaloid,False,3,3.875697215,Alkaloids,Nicotinic acid alkaloids,Cyclic peptides,,343.3030798,21.575142,343.3,21.5,291935.72,2886827.959
+3826,A,alkaloid,True,4,3.87504093,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,329.1941122,22.29946,329.1,22.2,1013213.4,7876738.908
+4625,A,alkaloid,True,7,3.823574168,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,281.2634599,23.547821,281.2,23.5,632591.94,12794825.37
+407,A,alkaloid,True,3,3.752640078,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,345.2203624,21.889265,345.2,21.8,361888.66,4616245.934
+11838,A,alkaloid,True,3,3.74145112,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,345.2229121,21.637419,345.2,21.6,532944.06,8990437.625
+8971,A,alkaloid,True,5,3.392188947,Alkaloids,Guanidine alkaloids,Imidazole alkaloids,,309.1593112,22.52987,309.1,22.5,272335.1,5732814.333
+12728,A,alkaloid,False,5,3.357708946,Alkaloids,Guanidine alkaloids,Imidazole alkaloids,,309.1830179,21.331772,309.1,21.3,1092768.5,23721301.73
+311,A,alkaloid,False,5,3.28306884,Alkaloids,Guanidine alkaloids,Imidazole alkaloids,,309.186815,21.76546,309.1,21.7,226075.4,81537180.79
+1094,A,alkaloid,False,7,3.186608644,Alkaloids,Pseudoalkaloids (transamidation),Purine alkaloids,,283.2486895,23.990124,283.2,23.9,216116.72,35504633.36
+12978,A,alkaloid,False,5,3.14032534,Alkaloids,Guanidine alkaloids,Imidazole alkaloids,,309.1871687,21.586798,309.1,21.5,442849.56,66449565.38
+11408,A,alkaloid,False,3,2.965899002,Alkaloids,Ornithine alkaloids,Polyamines,,401.2304906,18.670876,401.2,18.6,616837.7,10410203.66
+10449,A,alkaloid,False,3,2.899444739,Alkaloids,Oligopeptides,Imidazole alkaloids,,406.2504194,5.419655,406.2,5.4,660962.4,4166694.292
+8659,A,alkaloid,False,8,2.877955316,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,191.043554,0.80717486,191.0,0.8,468232.62,24634337.45
+9048,A,alkaloid,False,3,2.876390173,Alkaloids,Tryptophan alkaloids,Pinane monoterpenoids,,413.3624746,21.97962,413.3,21.9,349480.0,6346532.817
+13291,A,alkaloid,False,7,2.840768242,Alkaloids,Nucleosides,Quinazoline alkaloids,,291.1968541,22.182524,291.1,22.1,513718.0,18545172.55
+12899,A,alkaloid,False,4,2.810710384,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,329.2407789,21.015371,329.2,21.0,229497.42,76752193.8
+11138,A,alkaloid,False,5,2.772085672,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,311.1844162,21.370173,311.1,21.3,455367.2,6857395.119
+3519,A,alkaloid,False,5,2.734719914,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,311.2171855,21.802855,311.2,21.8,4692220.5,39226710.97
+10164,A,alkaloid,False,9,2.603091058,Alkaloids,Nicotinic acid alkaloids,Pyridine alkaloids,,179.0675397,5.0805135,179.0,5.0,326275.53,7824395.202
+12391,A,alkaloid,False,7,2.482125763,Alkaloids,Tryptophan alkaloids,Aspidosperma type,,293.1823799,21.382917,293.1,21.3,532496.8,7066782.205
+2943,A,alkaloid,False,9,2.422031352,Alkaloids,Nicotinic acid alkaloids,Pyridine alkaloids,,179.0802926,0.59556466,179.0,0.5,298170.44,15612090.66
+1965,A,alkaloid,False,7,2.393317463,Alkaloids,Tryptophan alkaloids,Aspidosperma type,,293.1877022,22.870964,293.1,22.8,367591.44,10499722.39
+13274,A,alkaloid,False,8,2.382901025,Alkaloids,Ornithine alkaloids,Imidazole alkaloids,,206.1322443,6.9130445,206.1,6.9,257322.34,7442308.715
+968,A,alkaloid,False,7,2.314933038,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,293.2208298,22.365664,293.2,22.3,605658.75,68581713.73
+10621,A,alkaloid,False,8,2.224508001,Alkaloids,Tryptophan alkaloids,Quinolizidine alkaloids,,215.0760494,0.5392889,215.0,0.5,564913.6,15650425.21
+11693,A,alkaloid,False,9,2.204141753,Alkaloids,Oligopeptides,Cyclic peptides,,187.1393229,14.119277,187.1,14.1,784732.4,11287378.78
+592,A,alkaloid,False,7,2.090808216,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,293.2221476,22.181694,293.2,22.1,905145.2,253060166.2
+8162,A,alkaloid,False,8,2.076047587,Alkaloids,Pseudoalkaloids (transamidation),Quinolizidine alkaloids,,261.0960905,4.877533,261.0,4.8,1270587.2,12815594.51
+3572,A,alkaloid,False,6,1.948556605,Alkaloids,Guanidine alkaloids,Imidazole alkaloids,,297.1916489,22.352865,297.1,22.3,233087.14,11403075.93
+4284,A,alkaloid,False,9,1.927509122,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,191.0423447,0.5887908,191.0,0.5,150104.0,49276782.31
+8357,A,alkaloid,False,8,1.769565058,Alkaloids,Small peptides,Dipeptides,,271.2435418,23.063612,271.2,23.0,274178.78,7807401.182
+4394,A,alkaloid,False,8,1.52170813,Alkaloids,Histidine alkaloids,Imidazole alkaloids,,279.2420162,23.254179,279.2,23.2,3344098.2,62313233.32
+3758,A,flavonoid,False,1,4.031002615,Shikimates and Phenylpropanoids,Flavonoids,Chalcones,,577.3931986,22.484625,577.3,22.4,732563.5,19641495.71
+7857,A,flavonoid,False,1,3.949822773,Shikimates and Phenylpropanoids,Flavonoids,Chalcones,,591.2611478,13.47634,591.2,13.4,716997.6,9445633.376
+11915,A,flavonoid,False,3,3.486357603,Shikimates and Phenylpropanoids,Flavonoids,Flavanones,,355.1025558,3.0277958,355.1,3.0,247489.25,18396153.13
+406,A,flavonoid,False,3,3.462438409,Shikimates and Phenylpropanoids,Flavonoids,Flavanones,,355.1154269,2.1671517,355.1,2.1,425871.84,10309293.74
+1381,A,flavonoid,False,3,3.222086715,Shikimates and Phenylpropanoids,Flavonoids,Flavanones,,355.1626956,5.579791,355.1,5.5,3640366.8,16598402.57
+1213,A,flavonoid,False,8,1.779957972,Shikimates and Phenylpropanoids,Flavonoids,Chalcones,,269.1345978,21.561785,269.1,21.5,269423.56,19482586.04
+3328,A,flavonoid_noted,True,1,3.796181361,Shikimates and Phenylpropanoids,Flavonoids,Flavones,"Two options: First, Apigenin di-Glycoside: likely of simialr structure of ""Apigenin 6,8-di-C-glucoside"". Second option is a B-type proanthocyanidin dimer. Both have same absorbance and mass of 594 (here showing 593 because of negative mode ionization make them loose a proton. Yet, because of the different retention times and the presence of a 441 and 431 fragments, it is more likely the B-type proanthocyanidin dimer.",593.2811397,14.041394,593.2,14.0,265659.88,4334444.906
+3887,A,flavonoid_noted,True,1,3.269352748,Shikimates and Phenylpropanoids,Flavonoids,Flavones,"Two options: First, Apigenin di-Glycoside: likely of simialr structure of ""Apigenin 6,8-di-C-glucoside"". Second option is a B-type proanthocyanidin dimer. Both have same absorbance and mass of 594 (here showing 593 because of negative mode ionization make them loose a proton. Yet, because of the different retention times and the presence of a 441 and 431 fragments, it is more likely the B-type proanthocyanidin dimer.",593.2863763,6.9124312,593.2,6.9,231411.45,9602186.418
+3663,A,flavonoid_noted,True,1,3.220605531,Shikimates and Phenylpropanoids,Flavonoids,Flavones,"Two options: First, Apigenin di-Glycoside: likely of simialr structure of ""Apigenin 6,8-di-C-glucoside"". Second option is a B-type proanthocyanidin dimer. Both have same absorbance and mass of 594 (here showing 593 because of negative mode ionization make them loose a proton. Yet, because of the different retention times and the presence of a 441 and 431 fragments, i lean to the B-type proanthocyanidin dimer.",593.3998642,21.459846,593.3,21.4,1476524.0,5149802.495
+3786,A,flavonoid_noted,True,1,3.033572451,Shikimates and Phenylpropanoids,Flavonoids,Flavones,Two possibilities: most likely a metilated Apigenin glycoside or a Sodium Adduct of Apihenin di-glycoside,617.2977497,17.412628,617.2,17.4,272225.44,30373652.91
+11425,A,flavonoid_noted,True,1,2.896253751,Shikimates and Phenylpropanoids,Flavonoids,Flavones,Two possibilities: most likely a metilated Apigenin glycoside or a Sodium Adduct of Apihenin di-glycoside,617.3052449,18.287352,617.3,18.2,378570.78,20624048.29
+13198,A,flavonoid_noted,True,1,2.881459882,Shikimates and Phenylpropanoids,Flavonoids,Flavones,Two possibilities: most likely a metilated Apigenin glycoside or a Sodium Adduct of Apihenin di-glycoside,618.3213494,17.411154,618.3,17.4,797248.2,3854318.75
+1957,A,flavonoid_noted,True,1,2.807222121,Shikimates and Phenylpropanoids,Flavonoids,Flavones,Two possibilities: most likely a metilated Isorhamnetin glycoside,623.3267951,14.227376,623.3,14.2,904689.4,20731106.8

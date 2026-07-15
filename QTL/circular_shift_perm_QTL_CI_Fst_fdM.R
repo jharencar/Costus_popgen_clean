@@ -41,8 +41,6 @@ all_QTL_CI <- read.csv(qtl_ci_path, header = TRUE, stringsAsFactors = FALSE) %>%
   filter(!chr == 5 | !trait == "GR") %>%
   filter(as.integer(chr) != 4L)
 
-all_QTL_CI_fst <- all_QTL_CI %>% filter(!chr == 6 | !trait == "SD")
-
 # ---- Lepmap: bp <-> cM (chr 4 dropped) ----
 lepmap_files <- list.files(
   lepmap_dir,
@@ -222,7 +220,7 @@ mean_fst_over_ci_segments <- function(chr_num, segments_cm) {
 
 # ---- Observed statistics: Fst in cM (matches permutation); f_dM in bp (genome-wide script) ----
 # Helper functions use chr_num (not chr) so rowwise() mutate can see column chr without masking.
-obs_fst <- all_QTL_CI_fst %>%
+obs_fst <- all_QTL_CI %>%
   rowwise() %>%
   mutate(
     avg_fst_QTL = mean_fst_over_ci_segments(
@@ -232,7 +230,7 @@ obs_fst <- all_QTL_CI_fst %>%
   ) %>%
   ungroup()
 
-obs_fdm <- all_QTL_CI_fst %>%
+obs_fdm <- all_QTL_CI %>%
   rowwise() %>%
   mutate(
     avg_f_dM_QTL = mean_fdm_over_bp_ranges(
@@ -246,7 +244,7 @@ obs_mean_fst <- mean(obs_fst$avg_fst_QTL, na.rm = TRUE)
 obs_mean_fdm <- mean(obs_fdm$avg_f_dM_QTL, na.rm = TRUE)
 
 # Precompute per-chromosome shift draws: independent Uniform(0, L) per chr that has QTLs
-chr_with_qtl <- sort(unique(as.integer(all_QTL_CI_fst$chr)))
+chr_with_qtl <- sort(unique(as.integer(all_QTL_CI$chr)))
 L_vec <- chr_len_cm %>%
   filter(chrom %in% chr_with_qtl) %>%
   { stats::setNames(.$L_cm, as.character(.$chrom)) }
@@ -260,10 +258,10 @@ for (p in seq_len(n_perm)) {
   names(shifts) <- names(L_vec)
 
   fst_vals <- map2_dbl(
-    all_QTL_CI_fst$chr,
-    seq_len(nrow(all_QTL_CI_fst)),
+    all_QTL_CI$chr,
+    seq_len(nrow(all_QTL_CI)),
     function(chr_val, i) {
-      row <- all_QTL_CI_fst[i, , drop = FALSE]
+      row <- all_QTL_CI[i, , drop = FALSE]
       ch <- as.integer(chr_val)
       L <- L_vec[[as.character(ch)]]
       if (is.null(L) || is.na(L) || L <= 0) {
@@ -276,10 +274,10 @@ for (p in seq_len(n_perm)) {
   )
 
   fdm_vals <- map2_dbl(
-    all_QTL_CI_fst$chr,
-    seq_len(nrow(all_QTL_CI_fst)),
+    all_QTL_CI$chr,
+    seq_len(nrow(all_QTL_CI)),
     function(chr_val, i) {
-      row <- all_QTL_CI_fst[i, , drop = FALSE]
+      row <- all_QTL_CI[i, , drop = FALSE]
       ch <- as.integer(chr_val)
       L <- L_vec[[as.character(ch)]]
       if (is.null(L) || is.na(L) || L <= 0) {
@@ -309,8 +307,8 @@ out <- list(
   p_one_sided_mean_fst_ge_obs = p_greater_fst,
   p_one_sided_mean_fdm_ge_obs = p_greater_fdm,
   obs_per_qtl = tibble(
-    trait = all_QTL_CI_fst$trait,
-    chr = all_QTL_CI_fst$chr,
+    trait = all_QTL_CI$trait,
+    chr = all_QTL_CI$chr,
     avg_fst_QTL = obs_fst$avg_fst_QTL,
     avg_f_dM_QTL = obs_fdm$avg_f_dM_QTL
   ),

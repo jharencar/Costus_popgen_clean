@@ -367,3 +367,37 @@ Methods-aligned folders `01_`–`04_` under repo root; verbatim pre-cleanup scri
 ### QTL scantwo on Farm
 
 Canonical: `03_QTL_mapping/rqtl/run_scantwo_per_trait.R` + `slurm/run_scantwo_all_traits.slurm`. Per-trait Hummingbird `.R`/`.sh` files kept as archives in `03_QTL_mapping/rqtl/`.
+
+### Exploratory chemistry QTL overlays on introgression/Fst figures
+
+For thinking about alkaloid vs flavonoid peaks on genome-wide differentiation (not publication ecological QTL):
+
+- Helper: [`04_introgression_vs_QTL/chem_alk_flav_QTL_regions.R`](04_introgression_vs_QTL/chem_alk_flav_QTL_regions.R) — 10% FDR WatersMass peaks, Alkaloid/Flavonoid, clustered ≤15 cM.
+- Fst panels (like `sup_genomewide_Fst_QTL_CIs`): `Rscript 04_introgression_vs_QTL/genomewide_Fst_chem_alk_flav_QTL_vlines.R` → `sup_genomewide_Fst_chem_alk_flav_QTL.pdf` (chr4 omitted like original; alkaloid chr4 peak noted in log).
+- 4-panel f_dM/d_f/Dxy/Fst: `Rscript 04_introgression_vs_QTL/combo_4panel_chem_alk_flav_QTL_vlines.R` → `sup_4panel_fdm_df_dxy_fst_chem_alk_flav_QTL.pdf`.
+- Lines: **orange = alkaloid**, **blue = flavonoid**; **solid = shared**, **dashed = independent**.
+
+---
+
+## Session: chemistry trait prioritization (2026-07-13)
+
+**Goal:** hone in on ecologically relevant pathways before final chemistry QTL (not map all 146 features).
+
+**Input:** [`03_QTL_mapping/data/Chem_QTL_mass_WATERS.csv`](03_QTL_mapping/data/Chem_QTL_mass_WATERS.csv) — annotated Waters mass alignment (NPC Pathway/Superclass/Class + collaborator Notes). Collaborator: trust **Pathway > Superclass > Class**; most prior QTL hits are alkaloids (esp. imidazole) and flavonoids; unclassified often = tiny peaks / intermediates.
+
+### Deliverables (prioritization only; QTL deferred)
+
+| File | Role |
+|------|------|
+| `03_QTL_mapping/data/Chem_QTL_trait_priority.csv` | All 146 tagged Tier A/B/C |
+| `03_QTL_mapping/data/Chem_QTL_TierA_alkaloids_flavonoids.csv` | Tier A (54): alkaloids + flavonoids |
+| `03_QTL_mapping/data/Chem_QTL_recommended_shortlist.csv` | Suggested 17: top-10 LOD imidazole + 7 noted flavonoids |
+| `03_QTL_mapping/rqtl/chemistry/TRAIT_PRIORITY.md` | Human-readable summary |
+
+### Tiers
+
+- **A:** Alkaloids (41) + Flavonoids (13) — primary ecological focus
+- **B:** Amino acids / peptides (5) — optional secondary
+- **C:** Unclassified + fatty acids / carbs / terpenoids / etc. — deprioritize
+
+**Do not** re-run publication QTL on all 146. Confirm shortlist or Tier A with user, then adapt `03_QTL_mapping/rqtl/chemistry/` prep + QTL + Farm scantwo for the chosen `row_ID` set only. Expected n with chemistry after merge: **~83** F3s.

@@ -1,0 +1,13 @@
+chr,pos_median_cM,n_traits,n_sig10,n_classified,top_pathway,frac_top_pathway,top_superclass,frac_top_superclass,top_class,frac_top_class,verdict,traits
+1,3.798591,2,0,1,Shikimates and Phenylpropanoids,0.5,Flavonoids,0.5,Flavones,0.5,UNINFORMATIVE (mostly unclassified),"row13149, row11425"
+1,36.009508,13,4,8,Shikimates and Phenylpropanoids,0.62,Flavonoids,0.62,Flavones,0.46,LIKELY SHARED BASIS (same pathway + superclass dominant),"row12821, row8565, row3786, row7857, row3328, row3758, row3887, row3663, row1957, row13198, row1586, row10852, row11541"
+2,41.008418,2,0,0,(unclassified),1.0,(unclassified),1.0,(unclassified),1.0,UNINFORMATIVE (mostly unclassified),"row2766, row4627"
+2,86.3807995,8,3,3,(unclassified),0.62,(unclassified),0.62,(unclassified),0.62,UNCLEAR / MIXED,"row10430, row7367, row12789, row11862, row1685, row4527, row8604, row1678"
+3,32.192556,27,8,18,Alkaloids,0.37,(unclassified),0.33,(unclassified),0.33,MIXED PATHWAYS (less likely single enzyme),"row3276, row11558, row406, row407, row3743, row13585, row190, row9048, row183, row7650, row11838, row11354, row9674, row4829, row11977, row11408, row11855, row13415, row10449, row11915, row8822, row11771, row3459, row3968, row1381, row1505, row8036"
+4,33.202217,3,1,2,Alkaloids,0.67,Histidine alkaloids,0.67,Imidazole alkaloids,0.67,LIKELY SHARED BASIS (same pathway + superclass dominant),"row3826, row13945, row12899"
+5,13.342341,9,2,8,Alkaloids,0.78,Guanidine alkaloids,0.56,Imidazole alkaloids,0.78,LIKELY SHARED BASIS (same pathway + superclass dominant),"row8971, row3519, row13523, row12728, row12978, row311, row11138, row9542, row12674"
+5,65.009123,3,3,3,Alkaloids,1.0,Guanidine alkaloids,1.0,Imidazole alkaloids,1.0,LIKELY SHARED BASIS (same pathway + superclass dominant),"row3007, row3092, row3035"
+7,24.390025,3,0,3,Alkaloids,0.67,Tryptophan alkaloids,0.67,Aspidosperma type,0.67,LIKELY SHARED BASIS (same pathway + superclass dominant),"row1965, row12391, row9077"
+7,61.814966,3,0,3,Alkaloids,1.0,Pseudoalkaloids (transamidation),0.33,Purine alkaloids,0.33,PLAUSIBLE SHARED BASIS (same pathway dominant; superclass mixed/weak),"row1094, row13291, row968"
+7,83.396175,3,1,3,Alkaloids,0.67,Histidine alkaloids,0.67,Imidazole alkaloids,0.67,LIKELY SHARED BASIS (same pathway + superclass dominant),"row2321, row3490, row4625"
+9,28.280784,7,1,4,(unclassified),0.43,(unclassified),0.43,(unclassified),0.43,MIXED PATHWAYS (less likely single enzyme),"row10164, row1231, row1534, row4713, row13858, row8216, row3029"

@@ -1,5 +1,6 @@
-# Genome-wide aHMM ancestry: all individuals in one PDF, alternating
-# black / dark grey points by chromosome. Requires CRAN package ggh4x (strip styling).
+# Genome-wide aHMM ancestry: all individuals in one PDF/PNG, alternating
+# black / dark grey points by chromosome.
+# Requires CRAN packages ggh4x (strip styling) and ggrastr (rasterized points).
 #
 # From project root (directory that contains `aHMM/`):
 #   Rscript aHMM/plot_AHV_LASIref2_all_individuals_genomewide_stripes.R
@@ -12,18 +13,30 @@ library(ggplot2)
 library(dplyr)
 library(grid)
 library(ggh4x)
+library(ggrastr)
 
 if (dir.exists("aHMM/AHV_LASIref2_260210")) {
   ahv_base <- "aHMM/AHV_LASIref2_260210"
   out_pdf <- "aHMM/sup_wild_aHMM.pdf"
+  out_png <- "aHMM/sup_wild_aHMM.png"
 } else if (dir.exists("AHV_LASIref2_260210")) {
   ahv_base <- "AHV_LASIref2_260210"
   out_pdf <- "AHV_LASIref2_260210_all_individuals_genomewide.pdf"
+  out_png <- "AHV_LASIref2_260210_all_individuals_genomewide.png"
 } else {
   stop(
     "Cannot find AHV_LASIref2_260210. Run from project root, or render/sourced with wd = aHMM/"
   )
 }
+
+final_figures_dir <- file.path(
+  Sys.getenv("HOME"),
+  "Library/CloudStorage/GoogleDrive-jgharencar@ucdavis.edu",
+  "My Drive/Costus/PopGen/Figures&Tables/Final_figures"
+)
+
+# Raster DPI for point layer (ggrastr) and PNG export
+raster_dpi <- 300
 chr_subdirs <- paste0("chr", 1:9)
 
 read_ahv_posterior <- function(path) {
@@ -130,7 +143,13 @@ p <- ggplot(plot_df, aes(genome_pos, ancestry)) +
     linewidth = 0.35,
     inherit.aes = FALSE
   ) +
-  geom_point(size = 1, stroke = 0, aes(color = point_col), alpha = 0.85) +
+  geom_point_rast(
+    size = 1,
+    stroke = 0,
+    aes(color = point_col),
+    alpha = 0.85,
+    raster.dpi = raster_dpi
+  ) +
   scale_color_identity(guide = "none") +
   facet_grid2(
     rows = vars(individual),
@@ -173,6 +192,17 @@ n_ind <- length(individuals)
 fig_h_cm <- min(26, max(14, n_ind * 1.9))
 
 ggsave(
+  out_png,
+  plot = p,
+  width = fig_w_cm,
+  height = fig_h_cm,
+  units = "cm",
+  dpi = raster_dpi,
+  limitsize = FALSE
+)
+message("Wrote ", normalizePath(out_png, mustWork = FALSE))
+
+ggsave(
   out_pdf,
   plot = p,
   width = fig_w_cm,
@@ -181,3 +211,9 @@ ggsave(
   limitsize = FALSE
 )
 message("Wrote ", normalizePath(out_pdf, mustWork = FALSE))
+
+if (dir.exists(final_figures_dir)) {
+  file.copy(out_png, file.path(final_figures_dir, basename(out_png)), overwrite = TRUE)
+  file.copy(out_pdf, file.path(final_figures_dir, basename(out_pdf)), overwrite = TRUE)
+  message("Copied to ", final_figures_dir)
+}
