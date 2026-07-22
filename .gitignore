@@ -72,3 +72,6 @@ slurm_log/
 
 # macOS
 .DS_Store
+
+# Local organization quarantine (not for GitHub/Dryad)
+_local_root_duplicates/
