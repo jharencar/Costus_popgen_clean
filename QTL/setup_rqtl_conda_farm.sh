@@ -43,4 +43,4 @@ cat("qtl version:", as.character(packageVersion("qtl")), "\n")
 echo ""
 echo "Success. Use on Farm:"
 echo "  module load conda && eval \"\$(conda shell.bash hook)\" && conda activate ${ENV_NAME}"
-echo "  CONDA_ENV=${ENV_NAME} sbatch run_WatersMass_chemistry_QTL.slurm"
+echo "  CONDA_ENV=${ENV_NAME} sbatch 03_QTL_mapping/rqtl/slurm/run_scantwo_all_traits.slurm"

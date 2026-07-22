@@ -79,6 +79,38 @@ Apply unless an analysis block below overrides.
 
 - Same parameters as wild hybrids; F3 + pedigree used for Lep-MAP3 input.
 
+#### Allele coding (AA / BB / hybrid_index / aHMM plots) — locked 2026-07-14/15
+
+**Resolved.** Mapping genotypes used Ancestry_HMM with  
+`--pop ../F3s0.05covCO_allF2s_F1parent.pop`  
+([`03_QTL_mapping/aHMM_F3/512x64_LASIref_ahmm_pipeline_F3s_F2parents_F1parent.sh`](03_QTL_mapping/aHMM_F3/512x64_LASIref_ahmm_pipeline_F3s_F2parents_F1parent.sh)).  
+User confirmed that `.pop` has **parent1 = *C. villosissimus***, **parent2 = *C. allenii***.
+
+**Pipeline → symbol map**
+
+| Source | Villosissimus | Allenii |
+|--------|---------------|---------|
+| `.pop` | parent1 | parent2 |
+| aHMM panel / HMM state | state 0 | state 1 |
+| Posterior column | `ref_homo` | `alt_homo` |
+| Hard call (Lep-MAP / R/qtl) | **AA** | **BB** |
+| `hybrid_index` | high (≈ genome-wide vill) | low |
+| Strip / posterior **plot y** (`ref_homo + 0.5×het`) | **≈ 1** | **≈ 0** |
+
+Hard-call rule: `ref_homo > 0.9 → AA`, `alt_homo > 0.9 → BB`.  
+HI tracks AA dosage (*r*≈0.92). `Costus_QTL.qmd` “HI = vill ancestry” is correct; ignore older “HI = allenii” comments.
+
+**Plot y ≠ HMM state ID.** Internal state **0** is parent1 (vill); plotting maps P(homozygous state 0) to **y ≈ 1**. So “1 on the plot = homozygous vill” and “parent1 = vill” agree.
+
+**Sanity check (AHV_LASIref2_260210):** labeled `19.587.726_VILL` and high-vill PCA hybrids **19.589** / **19.727** have high mean plotted ancestry and many `ref_homo` (plot ≈1) sites; allenii-leaning hybrids have more `alt_homo` (plot ≈0). Confirms plot 1 / `ref_homo` / parent1 = vill.
+
+**R/qtl `fitqtl`:** **a = (μ_AA − μ_BB)/2**, **d = μ_AB − mid-parent**.  
+Positive **a** = vill higher than allenii *at that QTL after covariates*. Manuscript additive caption must say substituting *allenii* → *vill* (not the reverse).  
+For reabsorption, genome-wide **HI coef is positive** (vill↑ → reabs↑) while local QTL **a can be negative** (conditional on HI); use HI/raw means for the species check, not table `a` alone. Raw AA/BB means are in [`QTL/QTL_peaks_table.tex`](QTL/QTL_peaks_table.tex) (also under Google Drive `Figures&Tables/`).
+
+Full investigation + F2-family/HI exploration + draft LaTeX QTL table (not used in MS):  
+[`_unpublished_local/allele_coding_HI_background/`](_unpublished_local/allele_coding_HI_background/) (gitignored).
+
 #### Lep-MAP3 linkage map
 
 - Data: wild F1, **21** F2s, **389** F3s (one low-coverage F3 dropped vs 390 collected).
@@ -139,8 +171,6 @@ Also referenced in [`QTL/plot_GR_Nreabs_qtl_minimal.R`](QTL/plot_GR_Nreabs_qtl_m
 |-----------------|----------|
 | `log.seed.dormancy.scanone-hk_1kperm_251122.rds`, `growth.rate.scanone-hk_1kperm_251120.rds`, etc. | **scanone** permutation results (1000 perms) for 10% LOD FDR cutoffs |
 | `scantwo.perms/*.scantwo.hk.perm.rds` | **scantwo** permutations for `calc.penalties` / `stepwiseqtl` |
-| `QTL/aHMM_prelim_UV_chemistry_est.rf.rds` | Preliminary UV chemistry QTL cross (`est.rf` only; in repo) |
-| `QTL/prelim_UV_chemistry_scanone_by_trait.rds`, `*_covariates_by_trait.rds`, `*_perm_cutoffs_*.rds` | Prelim chemistry scanone outputs (in repo) |
 | `QTL/circular_shift_perm_QTL_CI_Fst_fdM.rds` | Circular-shift null for QTL CI vs Fst/fdM overlap (in repo) |
 
 **Agent defaults:** For new QTL or genomic-heritability scripts, read **`most_dups_genoprob.rds`** unless explicitly reproducing an old scan that used **`least_dups`**. Do not assume `.rds` files are in `Costus_popgen_clean`—set a configurable path at the top of scripts.
@@ -259,62 +289,9 @@ Also referenced in [`QTL/plot_GR_Nreabs_qtl_minimal.R`](QTL/plot_GR_Nreabs_qtl_m
 
 ---
 
-## Session: Waters mass-alignment chemistry QTL (final)
+## Session: chemistry QTL (not in manuscript)
 
-### Scripts (`QTL/`)
-
-- **`prepare_WatersMass_chemistry.R`** — Read `WatersMassAlingment.xlsx` (sheet `in`); transpose to sample rows; **per-sample max scaling** (divide intensities by sample max; skip if max = 0). Trait names: `row###` from `row ID`. Writes `WatersMass_feature_metadata.csv` (`trait`, `row_ID`, `mz`, `rt`) for Ion Mobility linking. Match `field_ID` → `Lab_ID` via `Kay_lab_database.csv`; merge into `F3phe_onehotcovar_newHI_with_WatersMass_chemistry.csv`.
-- **`WatersMass_chemistry_QTL.R`** — Load canonical **`most_dups_genoprob.rds`** (`GENOPROB_RDS`; fails clearly if missing). Per-trait AIC covariate selection (hybrid index, F21 one-hots, growth `coh*` ≥ 10). `scanone(..., method = "hk")` on mappable features (variance > 0, ≥ 20 non-NA). **`N_PERM`** default **100** (first pass); set **1000** for manuscript run.
-- **`run_WatersMass_chemistry_QTL.slurm`** — **Farm** (`-A jrigrp`, `-p low`, logs in `~/Costus_scripts/slurm_log/`). Prep then QTL; ~hours (100 perm) vs ~24–48 h (1000 perm). Hummingbird used `512x64` + `/hb/groups/kay_lab/R_QTL` (not Farm).
-
-### Farm deployment (`~/Costus_scripts`)
-
-Flat layout (scripts + inputs in one directory) or repo-style `QTL/` subfolder; slurm tries both.
-
-**Required on Farm:**
-
-| File | Notes |
-|------|--------|
-| `run_WatersMass_chemistry_QTL.slurm` | Updated Farm slurm |
-| `prepare_WatersMass_chemistry.R`, `WatersMass_chemistry_QTL.R` | Yes — copy from repo `QTL/` |
-| `log_all_warnings.R` | Yes — warning log utility (same directory as R scripts) |
-| `WatersMassAlingment.xlsx` | Chemistry input |
-| `Kay_lab_database.csv` | ID lookup |
-| `F3phe_onehotcovar_newHI_20250925.csv` | F3 phenotypes + covariates |
-| `aHMM_251111_..._cleaned_most_dups_genoprob.rds` | **~858 MB** canonical cross; **`est.rf` is not enough** |
-
-**Optional (skip prep if already run locally):** copy prep outputs (`WatersMass_feature_metadata.csv`, `F3phe_onehotcovar_newHI_with_WatersMass_chemistry.csv`) and comment out the prep line in slurm.
-
-**Conda:** Farm uses `module load conda` + `conda activate`. Set `CONDA_ENV` to an env with **qtl**, **dplyr**, **tidyr**, **readxl** (Hummingbird: `/hb/groups/kay_lab/R_QTL`).
-
-**Submit:**
-```bash
-mkdir -p ~/Costus_scripts/slurm_log
-cd ~/Costus_scripts
-CONDA_ENV=your_r_qtl_env sbatch run_WatersMass_chemistry_QTL.slurm
-```
-
-**rsync example (from laptop):**
-```bash
-rsync -avP QTL/{prepare_WatersMass_chemistry.R,WatersMass_chemistry_QTL.R,log_all_warnings.R,run_WatersMass_chemistry_QTL.slurm,WatersMassAlingment.xlsx,Kay_lab_database.csv,F3phe_onehotcovar_newHI_20250925.csv} farm:~/Costus_scripts/
-rsync -avP ~/Documents/Github/alle_vill_QTL/aHMM_251111_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_most_dups_genoprob.rds farm:~/Costus_scripts/
-```
-
-### Outputs
-
-| File | Notes |
-|------|--------|
-| `WatersMass_chemistry_warnings.txt` | **All R warnings** (`log_all_warnings.R`; see repo convention below) |
-| `WatersMass_chemistry_scanone_summary.csv` | Max LOD per trait + **mz, rt** |
-| `WatersMass_chemistry_significant_10pct.csv` | 10% LOD FDR + mz/rt + `cutoff_10` |
-| `WatersMass_chemistry_shared_peaks_above50pct.csv` | Shared-peak clusters (15 cM), as prelim |
-| `WatersMass_chemistry_scanone_plots_significant.pdf` | 10% FDR traits only |
-
-Optional multi-QTL (`RUN_MULTI_QTL=1`): `stepwiseqtl` → `refineqtl` → `fitqtl` → `bayesint` for 10% FDR traits only → `WatersMass_chemistry_multi_QTL_models.rds`.
-
-### Match expectations (130 chemistry samples)
-
-- **104/130** Kay `details` → Lab_ID; **83/130** Lab_ID in `F3phe_onehotcovar_newHI_20250925.csv` (same as prelim UV chemistry).
+Chemistry QTL is **out of scope** for the public repo and Dryad. Materials were removed from the active tree (git history retained) and backed up on dissert at `Costus_local_only_not_Dryad/` (and locally under gitignored `_unpublished_local/` if present).
 
 ---
 
@@ -339,9 +316,7 @@ start_warning_log(default_basename = "my_script_warnings.txt")
 
 **Override path:** `WARNING_LOG=/path/to/warnings.txt Rscript my_script.R`
 
-**Waters chemistry:** `WatersMass_chemistry_warnings.txt`, `prepare_WatersMass_chemistry_warnings.txt` (cwd or `QTL/` on Farm).
-
-**On Farm:** copy `log_all_warnings.R` alongside other scripts in `~/Costus_scripts/`. After a run: `less ~/Costus_scripts/WatersMass_chemistry_warnings.txt`
+**On Farm:** copy `log_all_warnings.R` alongside other scripts in `~/Costus_scripts/`.
 
 ---
 
@@ -368,36 +343,16 @@ Methods-aligned folders `01_`–`04_` under repo root; verbatim pre-cleanup scri
 
 Canonical: `03_QTL_mapping/rqtl/run_scantwo_per_trait.R` + `slurm/run_scantwo_all_traits.slurm`. Per-trait Hummingbird `.R`/`.sh` files kept as archives in `03_QTL_mapping/rqtl/`.
 
-### Exploratory chemistry QTL overlays on introgression/Fst figures
+## Session: QTL line style + histogram percentile shading (2026-07-15)
 
-For thinking about alkaloid vs flavonoid peaks on genome-wide differentiation (not publication ecological QTL):
+**Opposite-of-expected QTL peaks → dashed** (solid = matches species expectation). Direction from raw genotype means (AA=vill, BB=allenii), not conditional fitqtl `a`:
 
-- Helper: [`04_introgression_vs_QTL/chem_alk_flav_QTL_regions.R`](04_introgression_vs_QTL/chem_alk_flav_QTL_regions.R) — 10% FDR WatersMass peaks, Alkaloid/Flavonoid, clustered ≤15 cM.
-- Fst panels (like `sup_genomewide_Fst_QTL_CIs`): `Rscript 04_introgression_vs_QTL/genomewide_Fst_chem_alk_flav_QTL_vlines.R` → `sup_genomewide_Fst_chem_alk_flav_QTL.pdf` (chr4 omitted like original; alkaloid chr4 peak noted in log).
-- 4-panel f_dM/d_f/Dxy/Fst: `Rscript 04_introgression_vs_QTL/combo_4panel_chem_alk_flav_QTL_vlines.R` → `sup_4panel_fdm_df_dxy_fst_chem_alk_flav_QTL.pdf`.
-- Lines: **orange = alkaloid**, **blue = flavonoid**; **solid = shared**, **dashed = independent**.
+| QTL | Direction | Style on plots |
+|-----|-----------|----------------|
+| SD chr2, GR chr3, Nreabs chr1, Chlreabs chr1 | matches expected | solid |
+| SD chr6, tough chr3, tough chr8 | opposite | dashed |
+| GR chr5 | opposite | dashed if shown; already excluded by CI filter |
 
----
-
-## Session: chemistry trait prioritization (2026-07-13)
-
-**Goal:** hone in on ecologically relevant pathways before final chemistry QTL (not map all 146 features).
-
-**Input:** [`03_QTL_mapping/data/Chem_QTL_mass_WATERS.csv`](03_QTL_mapping/data/Chem_QTL_mass_WATERS.csv) — annotated Waters mass alignment (NPC Pathway/Superclass/Class + collaborator Notes). Collaborator: trust **Pathway > Superclass > Class**; most prior QTL hits are alkaloids (esp. imidazole) and flavonoids; unclassified often = tiny peaks / intermediates.
-
-### Deliverables (prioritization only; QTL deferred)
-
-| File | Role |
-|------|------|
-| `03_QTL_mapping/data/Chem_QTL_trait_priority.csv` | All 146 tagged Tier A/B/C |
-| `03_QTL_mapping/data/Chem_QTL_TierA_alkaloids_flavonoids.csv` | Tier A (54): alkaloids + flavonoids |
-| `03_QTL_mapping/data/Chem_QTL_recommended_shortlist.csv` | Suggested 17: top-10 LOD imidazole + 7 noted flavonoids |
-| `03_QTL_mapping/rqtl/chemistry/TRAIT_PRIORITY.md` | Human-readable summary |
-
-### Tiers
-
-- **A:** Alkaloids (41) + Flavonoids (13) — primary ecological focus
-- **B:** Amino acids / peptides (5) — optional secondary
-- **C:** Unclassified + fatty acids / carbs / terpenoids / etc. — deprioritize
-
-**Do not** re-run publication QTL on all 146. Confirm shortlist or Tier A with user, then adapt `03_QTL_mapping/rqtl/chemistry/` prep + QTL + Farm scantwo for the chosen `row_ID` set only. Expected n with chemistry after merge: **~83** F3s.
+Scripts: `genome-wide_Fst.Dxy_w_QTL_plots.R`, `combo_Dsuite_pixy_4panel_fdm_df_dxy_fst.R`.  
+1 cM Fst/Dxy/fdM histograms: 5th/95th percentiles as **red tail shading** (not dashed red lines).  
+`sup_Dxy_fdM_QTL_window_distributions.pdf` also written to `Figures&Tables/` (parent of `Final_figures/`).

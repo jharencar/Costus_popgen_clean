@@ -2,28 +2,62 @@
 
 Code accompanying the manuscript on ecogeographic isolation, introgression, and the genetic basis of habitat-associated traits in *Costus allenii* and *C. villosissimus*.
 
-Methods prose: [`popgen_manu_methods.txt`](popgen_manu_methods.txt). Internal dev notes: [`NOTES.md`](NOTES.md).
+Methods prose: [`popgen_manu_methods.txt`](popgen_manu_methods.txt). Developer notes: [`NOTES.md`](NOTES.md).
 
 ## Repository map
 
 | Folder | Methods section |
 |--------|-----------------|
-| [`01_sequencing_and_variant_calling/`](01_sequencing_and_variant_calling/) | DNA extraction, sequencing, trimming, alignment, variant filters |
+| [`01_sequencing_and_variant_calling/`](01_sequencing_and_variant_calling/) | Read processing, alignment, variant filters |
 | [`02_population_genetics_wild/`](02_population_genetics_wild/) | PCA, aHMM, ABBA-BABA, Dsuite, PIXY |
-| [`03_QTL_mapping/`](03_QTL_mapping/) | F3 aHMM, Lep-MAP3, R/qtl, chemistry QTL |
-| [`04_introgression_vs_QTL/`](04_introgression_vs_QTL/) | Fst vs QTL window comparisons |
+| [`03_QTL_mapping/`](03_QTL_mapping/) | F3 aHMM, Lep-MAP3, R/qtl |
+| [`04_introgression_vs_QTL/`](04_introgression_vs_QTL/) | Fst / introgression vs QTL window comparisons |
 | [`sample_manifest/`](sample_manifest/) | Combined wild + mapping population sample table |
+| [`scripts/project_paths.R`](scripts/project_paths.R) | Shared path resolution (`COSTUS_ARCHIVE`, `PIXY_FOLDER`, `DSUITE_DIR`, `GENOPROB_RDS`, …) |
 
-Original unmodified scripts: [`_originals/`](_originals/). Cleaned copies use env-var paths (see [`CHANGELOG.md`](CHANGELOG.md)). Shared R paths: [`scripts/project_paths.R`](scripts/project_paths.R) (`COSTUS_ARCHIVE`, `PIXY_FOLDER`, `DSUITE_DIR`, etc.).
+Verbatim pre-cleanup copies: [`_originals/`](_originals/). Farm-ready `run_*.slurm` wrappers use environment variables; Hummingbird shell scripts keep historical `/hb/` paths.
 
-**HPC shell scripts** (`*_hb.sh`, `LASIout_*.sh`, `01_sequencing_and_variant_calling/preprocessing/`): document Hummingbird cluster paths for historical reruns. Farm/local wrappers (`run_*_array.slurm`) use environment variables instead. Set `JULIA_POPGEN` when adapting cluster scripts to a new filesystem.
+## Sequences and reference (NCBI)
 
-## Working on this machine
+| Resource | Accession / location |
+|----------|----------------------|
+| Reference genome (*C. lasius*) | [GCA_027563935.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_027563935.1/) |
+| Low-coverage WGS FASTQs (wild + mapping pop) | NCBI SRA BioProject *(accession TBD — update when deposited)* |
 
-- **Publication cleanup** uses only the local git repo (`Costus_popgen_clean`). Avoid browsing `/Volumes/dissert` in Finder if the volume does not mount in the sidebar — it can stress Finder. Use Terminal for external-drive paths when needed.
-- **Sample manifest:** after manual edits, deduplicate with `python3 sample_manifest/deduplicate_manifest.py` (one row per `sample_id`).
+Do **not** re-upload FASTQs to Dryad. Reconstruct BAMs / VCFs / aHMM posteriors from NCBI FASTQs using the scripts in `01_`–`03_` if a full pipeline rerun is required.
 
-## Software
+## What is regenerable vs provided elsewhere
+
+| Regenerable with this repo + NCBI FASTQs | Provided for convenience (Dryad, not GitHub) |
+|------------------------------------------|-----------------------------------------------|
+| Trimmed reads, BAMs, filtered VCFs | Canonical QTL `*_genoprob.rds`, scantwo permutation `.rds` |
+| aHMM `*.posterior`, Lep-MAP3 intermediates | Small phenotype / genotype CSVs (also in `03_QTL_mapping/data/`) |
+| Dsuite / PIXY genome-wide runs from VCFs | PIXY + Dsuite **plot-input tables** used by figure scripts |
+
+GitHub holds **code + small CSVs only**. Large objects ship in the Dryad package (see below) or a local `COSTUS_ARCHIVE` mirror.
+
+## Dryad package
+
+Dryad DOI: *(placeholder — add after deposit)*.
+
+Minimal Dryad zip contents (see `DRYAD_README.md` inside the package):
+
+- This publication code tree (`01_`–`04_`, `scripts/`, `sample_manifest/`, README, methods text)
+- QTL objects: `most_dups_genoprob.rds` (+ related crosses / scantwo perms)
+- Small inputs: phenotype CSV, QTL CI CSV, genotype CSV, sample manifest
+- Figure-input tables: PIXY `output_251124_LASIref/`, Dsuite `Fstats_w50s25_.../`
+
+Excluded from Dryad: FASTQs, BAMs, VCFs, aHMM posteriors, unpublished analyses.
+
+## Quick start
+
+1. Clone this repository; install R packages used by the figure / QTL scripts (`tidyverse`, `qtl`, `patchwork`, `ggrastr`, …).
+2. Download the Dryad package (or set `COSTUS_ARCHIVE` to a local archive with the same layout).
+3. `source("scripts/project_paths.R")` — or export env vars from [`sample_manifest/archive_paths.env.example`](sample_manifest/archive_paths.env.example).
+4. QTL notebook: [`03_QTL_mapping/rqtl/Costus_QTL.qmd`](03_QTL_mapping/rqtl/Costus_QTL.qmd) with working directory pointing at Dryad/`05_rqtl` (or set `GENOPROB_RDS`).
+5. Figures: scripts listed below under Figure reproduction.
+
+## Software (methods)
 
 | Tool | Version (methods) |
 |------|-------------------|
@@ -37,37 +71,6 @@ Original unmodified scripts: [`_originals/`](_originals/). Cleaned copies use en
 | PIXY | 10 kb windows |
 | Lep-MAP3 | LOD 11 |
 | R/qtl | Haley–Knott, 1000 permutations |
-
-## Quick start
-
-1. **Sample manifest:** `python3 sample_manifest/build_combined_manifest.py`
-2. **QTL mapping:** open [`03_QTL_mapping/rqtl/Costus_QTL.qmd`](03_QTL_mapping/rqtl/Costus_QTL.qmd) or run chunks sequentially. Inputs in [`03_QTL_mapping/data/`](03_QTL_mapping/data/).
-3. **Farm scantwo perms:** `bash 03_QTL_mapping/rqtl/setup_rqtl_conda_farm.sh` then `sbatch 03_QTL_mapping/rqtl/slurm/run_scantwo_all_traits.slurm`
-4. **Chemistry QTL:** `sbatch 03_QTL_mapping/rqtl/chemistry/run_WatersMass_chemistry_QTL.slurm` (swap in final chemistry file when ready)
-
-## External data (not in repository)
-
-Large analysis files are archived on the **dissert** drive at `Costus_archive/` (not committed to git). Set `COSTUS_ARCHIVE` if the mount path differs (e.g. `/run/media/julia/dissert/Costus_archive` on Linux).
-
-| Used by (methods code) | Archive path (under `$COSTUS_ARCHIVE`) |
-|------------------------|----------------------------------------|
-| `04_introgression_vs_QTL/*.R`, `02_population_genetics_wild/pixy/plot_pixy.R` | `06_pixy/output_251124_LASIref/` (or `06_pixy/from_hummingbird/pixy/output_latest/`) |
-| `04_introgression_vs_QTL/*.R` | `07_dsuite/Fstats_w50s25_Mappability.Depth.Transl.Filtered.LASIref_251120/` |
-| `02_population_genetics_wild/aHMM/plot_AHV_LASIref2_all_individuals_genomewide_stripes.R` | `03_aHMM_posteriors/wild_AHV_LASIref2/AHV_LASIref2_260210/` |
-| `03_QTL_mapping/lepmap3/generate_*_input.R`, `ordermarker_plots.R` | `03_aHMM_posteriors/QTL_grouped_run/.../no_thin_cated_posteriors_.../` (posteriors); `04_lepmap3/lepmap3/` (order files) |
-| `03_QTL_mapping/rqtl/Costus_QTL.qmd`, `run_scantwo_per_trait.R`, chemistry QTL | `05_rqtl/` (`*_genoprob.rds`, `scantwo.perms/`) |
-| Dsuite / pixy HPC reruns (`run_*_array.slurm`) | `02_VCFs/BAVLasi_LASIref_filtered_scaf/`, `02_VCFs/renamed_AVonly_pixy/` |
-| ABBA-BABA (`02_population_genetics_wild/abba_baba/`) | `08_ANGSD/abba_baba/from_hummingbird/` |
-
-R scripts resolve paths via [`scripts/project_paths.R`](scripts/project_paths.R) (`PIXY_FOLDER`, `DSUITE_DIR`, `GENOPROB_RDS`, `POSTERIOR_DIR`, etc.). Small CSV inputs ship in [`03_QTL_mapping/data/`](03_QTL_mapping/data/).
-
-**Archive layout and rsync history:** [`sample_manifest/HUMMINGBIRD_DATA_ARCHIVE.md`](sample_manifest/HUMMINGBIRD_DATA_ARCHIVE.md).
-
-**QTL notebook:** render `Costus_QTL.qmd` with working directory `$COSTUS_ARCHIVE/05_rqtl` (or set `GENOPROB_RDS` / symlink `.rds` files into `03_QTL_mapping/rqtl/`).
-
-## HPC scripts
-
-Hummingbird originals are in `_originals/` and beside Farm-ready `run_*.slurm` wrappers in each subfolder. See README in `02_population_genetics_wild/dsuite/`, `03_QTL_mapping/lepmap3/`, and `03_QTL_mapping/rqtl/`.
 
 ## Figure reproduction
 

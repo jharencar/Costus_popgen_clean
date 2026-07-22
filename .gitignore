@@ -56,6 +56,9 @@ rsconnect/
 # Local R package library (optional; used by QTL heritability scripts)
 R_libs/
 
+# Unpublished chemistry QTL + allele-coding investigations (local reference only)
+_unpublished_local/
+
 
 # Publication repo: large analysis outputs
 *.vcf
