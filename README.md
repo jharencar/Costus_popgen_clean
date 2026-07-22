@@ -22,7 +22,7 @@ Verbatim pre-cleanup copies: [`_originals/`](_originals/). Farm-ready `run_*.slu
 | Resource | Accession / location |
 |----------|----------------------|
 | Reference genome (*C. lasius*) | [GCA_027563935.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_027563935.1/) |
-| Low-coverage WGS FASTQs (wild + mapping pop) | NCBI SRA BioProject *(accession TBD — update when deposited)* |
+| Low-coverage WGS FASTQs (wild + mapping pop) | NCBI SRA BioProject [PRJNA1479894](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1479894) |
 
 ## What is regenerable vs provided elsewhere
 
