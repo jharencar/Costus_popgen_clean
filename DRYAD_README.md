@@ -31,7 +31,7 @@ Costus_Dryad_package/
   data_qtl/
     05_rqtl/                      # R/qtl cross objects (genoprob, est.rf)
     scantwo.perms/                # scantwo permutation RDS by trait
-    small_inputs/                 # phenotype, genotype, QTL CI, sample manifest CSVs
+    small_inputs/                 # phenotype / genotype / QTL CI CSVs
   data_figure_inputs/
     pixy_output_251124_LASIref/   # PIXY π, Dxy, Fst (10 kb windows)
     Dsuite_Fstats_w50s25_LASIref_251120/  # Dsuite local F-statistics (w50 s25)
@@ -44,8 +44,9 @@ Ignore macOS AppleDouble sidecars (`._*`) if present; they are not data files.
 
 1. Use `code/` with NCBI FASTQs (and the reference genome) to regenerate pipelines from scratch, **or**
 2. Point `code/scripts/project_paths.R` at this package (see **Code/Software**) to reload QTL objects and figure-input tables without re-running cluster jobs.
-3. `data_qtl/small_inputs/` are the tabular inputs used to build / annotate the R/qtl objects and QTL CI overlays.
-4. `data_figure_inputs/` are the windowed summary tables read by introgression-vs-QTL and genome-wide figure scripts in `code/04_introgression_vs_QTL/` (and related plotting scripts documented in `code/NOTES.md`).
+3. `data_qtl/small_inputs/` are the tabular phenotype/genotype/CI inputs used to build / annotate the R/qtl objects.
+4. `code/sample_manifest/combined_sample_manifest.tsv` is the sample metadata table (wild + mapping population).
+5. `data_figure_inputs/` are the windowed summary tables read by introgression-vs-QTL and genome-wide figure scripts in `code/04_introgression_vs_QTL/` (and related plotting scripts documented in `code/NOTES.md`).
 
 ### File descriptions
 
@@ -59,9 +60,26 @@ Publication GitHub tree for this project (`https://github.com/jharencar/Costus_p
 | `02_population_genetics_wild/` | PCA, aHMM, ABBA-BABA, Dsuite, PIXY workflows |
 | `03_QTL_mapping/` | F3 aHMM, Lep-MAP3, R/qtl scripts |
 | `04_introgression_vs_QTL/` | Fst / introgression vs QTL comparisons and figures |
-| `sample_manifest/` | Sample tables and archive notes |
+| `sample_manifest/` | Final sample table only (`combined_sample_manifest.tsv`) |
 | `scripts/project_paths.R` | Shared path resolution via environment variables |
 | `README.md`, `NOTES.md`, `popgen_manu_methods.txt` | Documentation |
+
+#### `code/sample_manifest/combined_sample_manifest.tsv`
+
+Final sample metadata for wild collections and the QTL mapping population (**524** rows; one row per unique `sample_id`). This is the only sample table in the package (build scripts and NCBI source tables are not included).
+
+| Column | Definition |
+|--------|------------|
+| `dataset` | `wild_collection` or `qtl_mapping` |
+| `sample_id` | Lab / analysis sample ID |
+| `organism` | Species or hybrid designation |
+| `collection_date` | Collection date (when applicable) |
+| `geographic_location` | Locality string |
+| `field_collection_id` | Field collection ID |
+| `latitude`, `longitude` | Decimal degrees (WGS84); may be blank |
+| `elevation_m` | Elevation in meters; may be blank |
+
+**Missing data:** empty cells for optional locality fields when not recorded.
 
 #### `data_qtl/05_rqtl/` (R binary objects)
 
@@ -136,21 +154,6 @@ Published QTL peaks and 95% Bayes credible intervals (**9** rows).
 | `peak_bp`, `lower95CI_bp`, `upper95CI_bp` | Peak and CI in physical coordinates | bp on *C. lasius* reference |
 | `peak_cm`, `lower95CI_cm`, `upper95CI_cm` | Peak and CI on the linkage map | cM |
 | `CI_size_bp`, `CI_size_cm` | Interval widths | bp, cM |
-
-##### `combined_sample_manifest.tsv`
-
-Sample metadata for wild collections and the mapping population (**524** rows).
-
-| Column | Definition |
-|--------|------------|
-| `dataset` | `wild_collection` or `qtl_mapping` |
-| `sample_id` | Lab / analysis sample ID |
-| `organism` | Species or hybrid designation |
-| `collection_date` | Collection date (when applicable) |
-| `geographic_location` | Locality string |
-| `field_collection_id` | Field ID |
-| `latitude`, `longitude` | Decimal degrees (WGS84); may be blank |
-| `elevation_m` | Elevation in meters; may be blank |
 
 #### `data_figure_inputs/pixy_output_251124_LASIref/`
 

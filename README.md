@@ -12,7 +12,7 @@ Methods prose: [`popgen_manu_methods.txt`](popgen_manu_methods.txt). Developer n
 | [`02_population_genetics_wild/`](02_population_genetics_wild/) | PCA, aHMM, ABBA-BABA, Dsuite, PIXY |
 | [`03_QTL_mapping/`](03_QTL_mapping/) | F3 aHMM, Lep-MAP3, R/qtl |
 | [`04_introgression_vs_QTL/`](04_introgression_vs_QTL/) | Fst / introgression vs QTL window comparisons |
-| [`sample_manifest/`](sample_manifest/) | Combined wild + mapping population sample table |
+| [`sample_manifest/`](sample_manifest/) | Final sample table (`combined_sample_manifest.tsv`) |
 | [`scripts/project_paths.R`](scripts/project_paths.R) | Shared path resolution (`COSTUS_ARCHIVE`, `PIXY_FOLDER`, `DSUITE_DIR`, `GENOPROB_RDS`, …) |
 
 Verbatim pre-cleanup copies: [`_originals/`](_originals/). Farm-ready `run_*.slurm` wrappers use environment variables; Hummingbird shell scripts keep historical `/hb/` paths.
@@ -38,7 +38,7 @@ Dryad DOI: *(placeholder — add after deposit)*.
 
 Minimal Dryad zip contents (see `DRYAD_README.md` inside the package):
 
-- This publication code tree (`01_`–`04_`, `scripts/`, `sample_manifest/`, README, methods text)
+- This publication code tree (`01_`–`04_`, `scripts/`, `sample_manifest/combined_sample_manifest.tsv`, README, methods text)
 - QTL objects: `most_dups_genoprob.rds` (+ related crosses / scantwo perms)
 - Small inputs: phenotype CSV, QTL CI CSV, genotype CSV, sample manifest
 - Figure-input tables: PIXY `output_251124_LASIref/`, Dsuite `Fstats_w50s25_.../`

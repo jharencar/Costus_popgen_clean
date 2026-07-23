@@ -28,7 +28,7 @@ Full prose in `popgen_manu_methods.txt`. Below: data types, sample sets, and fil
 
 Apply unless an analysis block below overrides.
 
-- **Mappability:** genmap, **k = 15**, merge distance **100 bp**, keep regions **>= 0.7**.
+- **Mappability:** genmap, **k = 150**, merge distance **100 bp**, keep regions **>= 0.7**.
 - **SNP calling:** base + map qual **20**; **MAF 0.05**; sites **within 3 bp of indel** removed; depth **> 99th percentile** removed.
 
 ### Analysis-specific filters and data types
@@ -336,7 +336,7 @@ Methods-aligned folders `01_`–`04_` under repo root; verbatim pre-cleanup scri
 
 - **`scripts/project_paths.R`** — `project_paths()` resolves `PROJECT_ROOT`, pixy/Dsuite/QTL paths from env or repo layout.
 - **Farm slurm** — `run_*.slurm` wrappers with env vars; Hummingbird originals kept alongside.
-- **Sample manifest** — `sample_manifest/combined_sample_manifest.tsv` (524 unique `sample_id` after dedup); `deduplicate_manifest.py` after manual edits.
+- **Sample manifest** — `sample_manifest/combined_sample_manifest.tsv` only (524 unique `sample_id`). Build scripts / NCBI source tables live in gitignored `_unpublished_local/sample_manifest_build/`.
 - **Avoid Finder on `/Volumes/dissert`** if the volume only appears in Disk Utility/Terminal (can crash Finder). Do publication file work in the git repo; use Terminal for dissert paths.
 
 ### QTL scantwo on Farm

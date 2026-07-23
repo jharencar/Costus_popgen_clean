@@ -65,10 +65,16 @@ _unpublished_local/
 *.vcf.gz
 *.vcf.gz.tbi
 *.posterior
+*.panel
 *.bam
 *.bai
 slurm_log/
 **/scantwo.perms/
+
+# Local working-dir data (regenerable, or provided via Dryad; keep out of GitHub)
+aHMM/AHV_LASIref2_260210/
+pixy/output_251124_LASIref/
+Dsuite/Fstats_w50s25_Mappability.Depth.Transl.Filtered.LASIref_251120/
 
 # macOS
 .DS_Store
