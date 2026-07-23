@@ -1,8 +1,9 @@
 #!/usr/bin/env Rscript
 # aHMM posteriors -> Lep-MAP3 .call genotype file.
-# Original: generate_lepmap_input_files_forJulia.R (verbatim in _originals/)
 #
-# Pedigree construction remains in the original script (hardcoded F2 family structure).
+# The F2 pedigree (6 header rows: family, individual, father, mother, sex,
+# phenotype) is provided separately as `pedigree.txt` and is prepended to the
+# genotypes below to form the ParentCall2 input.
 #
 # Usage:
 #   POSTERIOR_DIR=/path/to/posteriors \
