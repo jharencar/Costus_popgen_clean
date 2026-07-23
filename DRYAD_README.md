@@ -17,7 +17,7 @@ Package build date: `2026-07-22`. Zip checksum (SHA-256): `5ce59113f8688082ad141
 - **Species:** *Costus allenii*, *C. villosissimus*, wild hybrids; *C. bracteatus* (ingroup for ABBA-BABA / Dsuite); *C. lasius* (outgroup and reference genome).
 - **Wild WGS:** Central Panama collections (plus *C. bracteatus* from Costa Rica; *C. lasius* from Panama and Peru). After coverage filters, analyses typically use on the order of ~28 *allenii* and ~18–20 *villosissimus* (exact *n* depends on the analysis; hybrids are excluded from ABBA-BABA and Dsuite *f*~dM~).
 - **Mapping population:** F3 progeny of an *allenii* × *villosissimus* cross (plus F1 parent and F2s used in linkage mapping). QTL mapping retains **385** genotyped individuals after QC.
-- **Traits scored in the F3 population (habitat-associated):** seed dormancy (days to radicle), growth rate (cm/day), leaf toughness and thickness, leaf dry matter content (LDMC), percent nitrogen and chlorophyll reabsorption during drought-induced senescence, and leaf nitrogen content.
+- **Traits scored in the F3 population (habitat-associated):** seed dormancy (days to radicle), growth rate (cm/day), leaf toughness and thickness, percent nitrogen and chlorophyll reabsorption during drought-induced senescence, and leaf nitrogen content.
 - **Analyses covered by this package + NCBI sequences:** low-coverage WGS processing; wild population genetics (PCA, Ancestry_HMM, ABBA-BABA, Dsuite, PIXY); F3 Ancestry_HMM → Lep-MAP3 → R/qtl; comparison of differentiation / introgression statistics with QTL intervals.
 
 Full methods prose is in `code/popgen_manu_methods.txt`. Developer path conventions are in `code/NOTES.md`.
@@ -123,7 +123,6 @@ Phenotypes and covariates for the F3 mapping population (**385** rows after QTL 
 | `s.coh*`, `coh*` | One-hot indicators for seed / measurement cohorts retained as covariates | 0/1 |
 | `days_to_radicle` | Seed dormancy: days from sowing to radicle emergence | days (QTL models use log transform) |
 | `GR_cm.dy` | Growth rate | cm / day |
-| `ldmc` | Leaf dry matter content | proportion (dry/fresh mass) |
 | `ave_thick` | Mean leaf thickness (3 points) | mm |
 | `ave_tough` | Mean leaf toughness (penetrometer) | g force |
 | `N_reabsorp` | Leaf nitrogen reabsorption during drought senescence | percent |
