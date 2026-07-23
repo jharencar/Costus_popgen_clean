@@ -76,14 +76,9 @@ aHMM/AHV_LASIref2_260210/
 pixy/output_251124_LASIref/
 Dsuite/Fstats_w50s25_Mappability.Depth.Transl.Filtered.LASIref_251120/
 
-# QTL/ working-dir copies redundant with 03_QTL_mapping/ (canonical) + internal lab DB
-QTL/F3phe_onehotcovar_newHI_20250925.csv
-QTL/all_QTL_CIs_bp_cm.251130.csv
-QTL/f3gen_250924_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001.csv
-QTL/log_all_warnings.R
-QTL/setup_rqtl_conda_farm.sh
-QTL/Kay_lab_database.csv
-QTL/Kay_lab_database.xlsx
+# QTL/ local working dir (redundant copies + unique exploratory analyses + internal
+# lab DB). Canonical QTL code/data live in 03_QTL_mapping/; keep this out of GitHub.
+QTL/
 
 # macOS
 .DS_Store

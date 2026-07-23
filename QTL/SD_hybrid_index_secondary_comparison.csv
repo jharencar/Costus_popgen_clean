@@ -1,3 +1,0 @@
-"model","covariates","n","pct_QTL","pct_hybrid_index","pct_environment","full_model_pctvar","h2_REML","sigma_g","sigma_e","vp_cond","frac_genetic_QTL","AIC_lm_cohorts_only","AIC_lm_with_HI"
-"primary_cohorts_only","s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15",377,26.16434,0,13.73314,36.42842,0.552073789593478,NA,NA,NA,0.4739283134464,779.628253851129,NA
-"secondary_with_hybrid_index","hybrid_index + s.coh4 + s.coh7 + s.coh8 + s.coh9 + s.coh14 + s.coh15",377,26.21282,0.18513,13.98544,36.61355,0.569417688747314,0.504683093144988,0.381631299818922,0.88631439296391,0.460344322243777,779.628253851129,781.261817882494
