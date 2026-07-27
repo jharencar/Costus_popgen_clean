@@ -85,3 +85,19 @@ QTL/
 
 # Local organization quarantine (not for GitHub/Dryad)
 _local_root_duplicates/
+
+# Root-level exploratory/dev outputs — kept locally only, not for public GitHub,
+# Zenodo, or Dryad. Leading slash anchors these to the repo root so the publication
+# scripts under 02_population_genetics_wild/aHMM/, .../pixy/, etc. stay tracked.
+/aHMM/
+/pixy/
+/Dsuite/
+/QTL_plots/
+/Costus_QTL.qmd
+/*.Rproj
+/aHMM_plotting to check.R
+/df_*
+/fd_*
+/fdm_*
+/combo_*.png
+/sup_*.png
