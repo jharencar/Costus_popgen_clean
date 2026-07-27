@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build a genmap mappability mask for VCF filtering (manuscript parameters).
 #
-# Defaults match popgen_manu_methods.txt / NOTES.md:
+# Defaults match the manuscript methods / NOTES.md:
 #   k-mer length 150, merge distance 100 bp, exclude mappability < 0.7
 #
 # Usage:

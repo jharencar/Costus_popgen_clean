@@ -4,7 +4,7 @@ This file captures decisions and work from development sessions so future toolin
 
 ## Methods summary (manuscript)
 
-Full prose in `popgen_manu_methods.txt`. Below: data types, sample sets, and filters agents need when writing or modifying analysis/plotting scripts.
+Full methods prose is in the associated manuscript. Below: data types, sample sets, and filters agents need when writing or modifying analysis/plotting scripts.
 
 ### Study system and samples
 

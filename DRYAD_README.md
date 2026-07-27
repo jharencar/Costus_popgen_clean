@@ -2,11 +2,13 @@
 
 [Access this dataset on Dryad](DOI_PLACEHOLDER)
 
-This repository holds the data and code used for analyses in the manuscript, "Divergent habitat selection across many loci maintains species boundaries during introgression." The analyses investigate ecogeographic isolation, introgression, and QTL for habitat-associated traits in Neotropical *Costus allenii* and *C. villosissimus*. It contains (1) analysis and figure code, (2) expensive-to-regenerate QTL R objects and permutation results, (3) small phenotype/genotype/CI tables, and (4) PIXY and Dsuite window tables used by manuscript figure scripts.
+This is the **data** deposit for analyses in the manuscript, "Divergent habitat selection across many loci maintains species boundaries during introgression." The analyses investigate ecogeographic isolation, introgression, and QTL for habitat-associated traits in Neotropical *Costus allenii* and *C. villosissimus*. It contains (1) QTL `scantwo` permutation results, (2) small phenotype / genotype / QTL-CI tables and sample metadata, and (3) PIXY and Dsuite window tables used by manuscript figure scripts.
 
-**Not included here** (available elsewhere or regenerable): raw FASTQs, BAMs, VCFs, Ancestry_HMM posterior files, and other large intermediates. See **Sharing/Access information**.
+**Analysis code is archived separately** on Zenodo under the MIT license (deposited via Dryad's software route) and developed openly at https://github.com/jharencar/Costus_popgen_clean. See **Sharing/Access information** and **Code/Software**.
 
-Package build date: `2026-07-22`. Zip checksum (SHA-256): `5ce59113f8688082ad141585bad4773bb9302d964d1f40cdd4ebb861df4976f2` (`manifest/`).
+**Not included here** (available elsewhere or regenerable): the analysis code (Zenodo/GitHub); the large R/qtl cross objects (`*_genoprob.rds`, `est.rf.rds`), which are rebuilt from the deposited CSV inputs by the R/qtl scripts; raw FASTQs, BAMs, VCFs, Ancestry_HMM posterior files, and other large intermediates. See **Sharing/Access information**.
+
+Package build date: `2026-07-27`. A SHA-256 checksum of the data zip is provided alongside the download (`Costus_popgen_Dryad_data_20260727.zip.sha256`).
 
 ---
 
@@ -22,59 +24,50 @@ Package build date: `2026-07-22`. Zip checksum (SHA-256): `5ce59113f8688082ad141
 - **Wild WGS:** Central Panama collections (plus *C. bracteatus* from Costa Rica; *C. lasius* from Panama and Peru). 
 - **Mapping population:** F3 progeny of an *allenii* × *villosissimus* cross (plus F1 parent and F2s used in linkage mapping). QTL mapping retains **385** genotyped individuals after QC.
 - **Traits scored in the F3 population (habitat-associated):** seed dormancy (days to radicle), growth rate (cm/day), leaf toughness and thickness, percent nitrogen and chlorophyll reabsorption during drought-induced senescence, and leaf nitrogen content.
-- **Analyses covered by this package + NCBI sequences:** low-coverage WGS processing; wild population genetics (PCA, Ancestry_HMM, ABBA-BABA, Dsuite, PIXY); F3 Ancestry_HMM → Lep-MAP3 → R/qtl; comparison of differentiation / introgression statistics with QTL intervals.
+- **Analyses covered by this deposit + code archive + NCBI sequences:** low-coverage WGS processing; wild population genetics (PCA, Ancestry_HMM, ABBA-BABA, Dsuite, PIXY); F3 Ancestry_HMM → Lep-MAP3 → R/qtl; comparison of differentiation / introgression statistics with QTL intervals.
 
 Full methods prose is in the manuscript, "Divergent habitat selection across many loci maintains species boundaries during introgression."
 
 ### Package layout
 
 ```
-Costus_Dryad_package/
-  DRYAD_README.md                 # this file
-  code/                           # publication code tree (methods scripts + docs)
+Costus_Dryad_data/
+  DRYAD_README.md                 # this file (uploaded to Dryad separately, not in the zip)
+  sample_manifest/
+    combined_sample_manifest.tsv  # sample metadata (wild + mapping population)
   data_qtl/
-    05_rqtl/                      # R/qtl cross objects (genoprob, est.rf)
     scantwo.perms/                # scantwo permutation RDS by trait
     small_inputs/                 # phenotype / genotype / QTL CI CSVs
   data_figure_inputs/
     pixy_output_251124_LASIref/   # PIXY π, Dxy, Fst (10 kb windows)
     Dsuite_Fstats_w50s25_LASIref_251120/  # Dsuite local F-statistics (w50 s25)
-  manifest/                       # build date + zip checksum
+  manifest/                       # build date
 ```
+
+The analysis **code** is not in this deposit; it is archived on Zenodo (MIT) and on
+GitHub (see **Sharing/Access information**). The large R/qtl cross objects
+(`*_genoprob.rds`, `est.rf.rds`) are also omitted and are regenerated from the CSVs in
+`data_qtl/small_inputs/` by the R/qtl scripts.
 
 ### How the pieces relate
 
-1. Use `code/` with NCBI FASTQs (and the reference genome) to regenerate pipelines from scratch, **or**
-2. Point `code/scripts/project_paths.R` at this repo (see **Code/Software**) to reload QTL objects and figure-input tables without re-running cluster jobs.
-3. `data_qtl/small_inputs/` are the tabular phenotype/genotype/CI inputs used to build / annotate the R/qtl objects.
-4. `code/sample_manifest/combined_sample_manifest.tsv` is the sample metadata table (wild + mapping population).
-5. `data_figure_inputs/` are the windowed summary tables read by introgression-vs-QTL and genome-wide figure scripts in `code/04_introgression_vs_QTL/` (and related plotting scripts documented in `code/NOTES.md`).
+1. Use the **code archive** (Zenodo/GitHub) with NCBI FASTQs (and the reference genome) to regenerate pipelines from scratch, **or**
+2. Point the code's `scripts/project_paths.R` at this data deposit (see **Code/Software**) to reload the figure-input tables and permutation objects without re-running cluster jobs.
+3. `data_qtl/small_inputs/` are the tabular phenotype/genotype/CI inputs used to build / annotate the R/qtl cross objects (the cross objects themselves are regenerated, not deposited).
+4. `sample_manifest/combined_sample_manifest.tsv` is the sample metadata table (wild + mapping population).
+5. `data_figure_inputs/` are the windowed summary tables read by the introgression-vs-QTL and genome-wide figure scripts in the code archive (`04_introgression_vs_QTL/`; related plotting scripts are documented in the code's `NOTES.md`).
 
 
 
 ### File descriptions
 
-#### `code/`
+#### Code (archived separately)
 
-Publication GitHub tree for this project (`https://github.com/jharencar/Costus_popgen_clean`), including:
+The analysis code is **not** in this Dryad deposit. It is archived on **Zenodo** under the **MIT license** (Zenodo DOI in **Sharing/Access information**) and developed openly at `https://github.com/jharencar/Costus_popgen_clean`. The code tree contains the read-processing, population-genetics, QTL-mapping, and introgression-vs-QTL scripts (`01_`–`04_`), `scripts/project_paths.R` for path resolution, `sample_manifest/`, and documentation (`README.md`, `NOTES.md`).
 
+#### `sample_manifest/combined_sample_manifest.tsv`
 
-| Path                                               | Contents                                                 |
-| -------------------------------------------------- | -------------------------------------------------------- |
-| `01_sequencing_and_variant_calling/`               | Read processing, alignment, variant filters              |
-| `02_population_genetics_wild/`                     | PCA, aHMM, ABBA-BABA, Dsuite, PIXY workflows             |
-| `03_QTL_mapping/`                                  | F3 aHMM, Lep-MAP3, R/qtl scripts                         |
-| `04_introgression_vs_QTL/`                         | Fst / introgression vs QTL comparisons and figures       |
-| `sample_manifest/`                                 | Final sample table only (`combined_sample_manifest.tsv`) |
-| `scripts/project_paths.R`                          | Shared path resolution via environment variables         |
-| `README.md`, `NOTES.md` | Documentation                                            |
-
-
-
-
-#### `code/sample_manifest/combined_sample_manifest.tsv`
-
-Final sample metadata for wild collections and the QTL mapping population (**524** rows; one row per unique `sample_id`). This is the only sample table in the package (build scripts and NCBI source tables are not included).
+Final sample metadata for wild collections and the QTL mapping population (**524** rows; one row per unique `sample_id`). This is the only sample table in the deposit (build scripts and NCBI source tables are not included; an identical copy ships with the code archive).
 
 
 | Column                  | Definition                            |
@@ -91,19 +84,15 @@ Final sample metadata for wild collections and the QTL mapping population (**524
 
 **Missing data:** empty cells for optional locality fields when not recorded.
 
-#### `data_qtl/05_rqtl/` (R binary objects)
+#### R/qtl cross objects (`*_genoprob.rds`, `est.rf.rds`) — regenerable, not deposited
 
-All are R serialized objects (`.rds`) for use with **R/qtl**. Shared filename stem:
-
-`aHMM_251111_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_<dup_level>_<stage>.rds`
-
-
-| File                        | Description                                                                                                                                                                                    |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `…_most_dups_genoprob.rds`  | **Canonical** R/qtl `cross` after `calc.genoprob()` on the moderate duplicate-marker thinning (~14,889 markers; 385 individuals). Use for published `fitqtl` / `refineqtl` / multi-QTL models. |
-| `…_least_dups_genoprob.rds` | More aggressively thinned genoprob cross (~4,013 markers); used for some scans/permutations, not the primary published multi-QTL fits.                                                         |
-| `…_least_dups_est.rf.rds`   | Cross after `est.rf()` (recombination fractions; before or without the genoprob stage used above).                                                                                             |
-
+The R/qtl `cross` objects are **not** included in this deposit because they are large and
+fully regenerable from the deposited inputs. Rebuild them with the R/qtl scripts in the code
+archive from `data_qtl/small_inputs/` (genotype + phenotype CSVs): import the cross, then
+`est.rf()` and `calc.genoprob()`. The canonical published object corresponds to the moderate
+duplicate-marker thinning (`most_dups`, ~14,889 markers; 385 individuals) used for `fitqtl` /
+`refineqtl` / multi-QTL models; a more aggressively thinned `least_dups` cross (~4,013 markers)
+is used for some scans.
 
 **Allele coding (locked):** AA = *C. villosissimus*; BB = *C. allenii*; AB = heterozygote. Genome-wide `hybrid_index` is high when ancestry is more *villosissimus*.
 
@@ -214,10 +203,9 @@ Dsuite `Dinvestigate` local F-statistics for trio *bracteatus*–*allenii*–*vi
 #### `manifest/`
 
 
-| File                                  | Contents                                   |
-| ------------------------------------- | ------------------------------------------ |
-| `BUILD_DATE.txt`                      | ISO timestamp when this repo was assembled |
-| `Costus_popgen_Dryad_20260722.sha256` | SHA-256 of the deposit zip                 |
+| File             | Contents                                      |
+| ---------------- | --------------------------------------------- |
+| `BUILD_DATE.txt` | ISO date when this deposit was assembled      |
 
 
 
@@ -247,7 +235,7 @@ Dsuite `Dinvestigate` local F-statistics for trio *bracteatus*–*allenii*–*vi
 - Chromosome **4** is often excluded from cM-scaled QTL vs Fst summaries because of poor Lep-MAP3 joining (physical-window plots may still include it).
 - QTL models use trait-specific covariates (hybrid index, selected F2 families, cohorts); see the manuscript and R/qtl scripts.
 - Seed dormancy enters QTL models as `log_days_to_radicle`, not raw days.
-- This package is intentionally **minimal**: regenerating BAMs/VCFs/posteriors from SRA is expected for full pipeline reproduction.
+- This deposit is intentionally **minimal**: the analysis code (Zenodo/GitHub), the large R/qtl cross objects, and BAMs/VCFs/posteriors are regenerated (from SRA and the deposited CSVs) rather than stored here.
 
 ---
 
@@ -257,19 +245,20 @@ Dsuite `Dinvestigate` local F-statistics for trio *bracteatus*–*allenii*–*vi
 
 Links to other publicly accessible locations of the data:
 
-- Publication code (GitHub): [https://github.com/jharencar/Costus_popgen_clean](https://github.com/jharencar/Costus_popgen_clean)
+- Analysis code (Zenodo archive, MIT license): *(add Zenodo DOI after deposit)*
+- Analysis code (development repository, GitHub): [https://github.com/jharencar/Costus_popgen_clean](https://github.com/jharencar/Costus_popgen_clean)
 - Reference genome (*C. lasius*): NCBI [GCA_027563935.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_027563935.1/)
 - Low-coverage WGS FASTQs (wild + mapping population): NCBI SRA BioProject [PRJNA1479894](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1479894)
-- Dryad DOI: *(add after deposit)*
+- Dryad DOI (this data deposit): *(add after deposit)*
 - Related manuscript: *(add citation / DOI when available)*
 
 Data were derived from the following sources:
 
 - Newly generated low-coverage whole-genome sequencing of wild *Costus* and the F3 mapping population (SRA BioProject above), aligned to *C. lasius* GCA_027563935.1
 - Phenotypes measured on the greenhouse F3 mapping population (methods in the associated manuscript)
-- Downstream summary statistics (PIXY, Dsuite) computed from filtered genotype data produced by the pipelines in `code/`
+- Downstream summary statistics (PIXY, Dsuite) computed from filtered genotype data produced by the pipelines in the code archive
 
-**License note:** Dryad releases data under Creative Commons Zero (CC0). Prefer linking to the GitHub repository for code under whatever license is declared there rather than treating scripts as independently relicensed beyond Dryad’s terms for the deposited files.
+**License note:** This Dryad data deposit is released under Creative Commons Zero (**CC0**), per Dryad policy. The analysis **code** is licensed separately under the **MIT License** and archived on Zenodo (with a linked DOI) and on GitHub; refer to those deposits for code reuse terms rather than treating the scripts as CC0.
 
 ---
 
@@ -281,18 +270,19 @@ Data were derived from the following sources:
 
 ### Recommended environment variables
 
-After unpacking this repo:
+After unpacking this data deposit **and** the code archive (Zenodo/GitHub):
 
 ```bash
-export COSTUS_ARCHIVE="/path/to/Costus_Dryad_package"
-export PROJECT_ROOT="${COSTUS_ARCHIVE}/code"
-export GENOPROB_RDS="${COSTUS_ARCHIVE}/data_qtl/05_rqtl/aHMM_251111_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001_cleaned_most_dups_genoprob.rds"
+export COSTUS_ARCHIVE="/path/to/Costus_Dryad_data"       # this data deposit
+export PROJECT_ROOT="/path/to/Costus_popgen_clean"        # code archive (Zenodo/GitHub)
+# Cross object is not deposited; point this at one you regenerate from the CSVs:
+export GENOPROB_RDS="/path/to/your_regenerated_most_dups_genoprob.rds"
 export PIXY_FOLDER="${COSTUS_ARCHIVE}/data_figure_inputs/pixy_output_251124_LASIref"
 export DSUITE_DIR="${COSTUS_ARCHIVE}/data_figure_inputs/Dsuite_Fstats_w50s25_LASIref_251120"
 export SCANTWO_PERM_DIR="${COSTUS_ARCHIVE}/data_qtl/scantwo.perms"
 ```
 
-Then in R from `code/`:
+Then in R from the code archive:
 
 ```r
 source("scripts/project_paths.R")
