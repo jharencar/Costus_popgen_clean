@@ -4,7 +4,7 @@
 
 This is the **data** deposit for analyses in the manuscript, "Divergent habitat selection across many loci maintains species boundaries during introgression." The analyses investigate ecogeographic isolation, introgression, and QTL for habitat-associated traits in Neotropical *Costus allenii* and *C. villosissimus*. It contains (1) QTL `scantwo` permutation results, (2) small phenotype / genotype / QTL-CI tables and sample metadata, and (3) PIXY and Dsuite window tables used by manuscript figure scripts.
 
-**Analysis code is archived separately** on Zenodo under the MIT license (deposited via Dryad's software route) and developed openly at https://github.com/jharencar/Costus_popgen_clean. See **Sharing/Access information** and **Code/Software**.
+**Analysis code is archived separately** on Zenodo under the MIT license (deposited via Dryad's software route) and developed openly at [https://github.com/jharencar/Costus_popgen_clean](https://github.com/jharencar/Costus_popgen_clean). See **Sharing/Access information** and **Code/Software**.
 
 **Not included here** (available elsewhere or regenerable): the analysis code (Zenodo/GitHub); the large R/qtl cross objects (`*_genoprob.rds`, `est.rf.rds`), which are rebuilt from the deposited CSV inputs by the R/qtl scripts; raw FASTQs, BAMs, VCFs, Ancestry_HMM posterior files, and other large intermediates. See **Sharing/Access information**.
 
@@ -61,6 +61,8 @@ GitHub (see **Sharing/Access information**). The large R/qtl cross objects
 
 ### File descriptions
 
+
+
 #### Code (archived separately)
 
 The analysis code is **not** in this Dryad deposit. It is archived on **Zenodo** under the **MIT license** (Zenodo DOI in **Sharing/Access information**) and developed openly at `https://github.com/jharencar/Costus_popgen_clean`. The code tree contains the read-processing, population-genetics, QTL-mapping, and introgression-vs-QTL scripts (`01_`–`04_`), `scripts/project_paths.R` for path resolution, `sample_manifest/`, and documentation (`README.md`, `NOTES.md`).
@@ -90,8 +92,8 @@ The R/qtl `cross` objects are **not** included in this deposit because they are 
 fully regenerable from the deposited inputs. Rebuild them with the R/qtl scripts in the code
 archive from `data_qtl/small_inputs/` (genotype + phenotype CSVs): import the cross, then
 `est.rf()` and `calc.genoprob()`. The canonical published object corresponds to the moderate
-duplicate-marker thinning (`most_dups`, ~14,889 markers; 385 individuals) used for `fitqtl` /
-`refineqtl` / multi-QTL models; a more aggressively thinned `least_dups` cross (~4,013 markers)
+duplicate-marker thinning (`most_dups`, ≈14,889 markers; 385 individuals) used for `fitqtl` /
+`refineqtl` / multi-QTL models; a more aggressively thinned `least_dups` cross (≈4,013 markers)
 is used for some scans.
 
 **Allele coding (locked):** AA = *C. villosissimus*; BB = *C. allenii*; AB = heterozygote. Genome-wide `hybrid_index` is high when ancestry is more *villosissimus*.
@@ -142,7 +144,7 @@ Phenotypes and covariates for the F3 mapping population (**385** rows after QTL 
 
 ##### `f3gen_250924_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001.csv`
 
-Wide genotype table for the mapping population (~391 rows including header alignment with IDs; ~36,783 marker columns before R/qtl QC thinning).
+Wide genotype table for the mapping population (≈391 rows including header alignment with IDs; ≈36,783 marker columns before R/qtl QC thinning).
 
 
 | Column(s)   | Definition                                             |
@@ -203,9 +205,9 @@ Dsuite `Dinvestigate` local F-statistics for trio *bracteatus*–*allenii*–*vi
 #### `manifest/`
 
 
-| File             | Contents                                      |
-| ---------------- | --------------------------------------------- |
-| `BUILD_DATE.txt` | ISO date when this deposit was assembled      |
+| File             | Contents                                 |
+| ---------------- | ---------------------------------------- |
+| `BUILD_DATE.txt` | ISO date when this deposit was assembled |
 
 
 
@@ -218,8 +220,8 @@ Dsuite `Dinvestigate` local F-statistics for trio *bracteatus*–*allenii*–*vi
 | aHMM                            | Ancestry_HMM local ancestry inference                                           |
 | bp / cM                         | Base pairs / centiMorgans                                                       |
 | CI                              | Credible interval (Bayes; R/qtl `bayesint`)                                     |
-| Fst / F~ST~                   | Weir–Cockerham fixation index (PIXY `avg_wc_fst`)                               |
-| Dxy / D~xy~                   | Absolute divergence (PIXY)                                                      |
+| Fst / F_ST                      | Weir–Cockerham fixation index (PIXY `avg_wc_fst`)                               |
+| Dxy / D_xy                      | Absolute divergence (PIXY)                                                      |
 | π / pi                          | Nucleotide diversity (PIXY)                                                     |
 | fdM / *f*_dM                    | Dsuite introgression statistic                                                  |
 | SD, GR, tough, Nreabs, Chlreabs | Seed dormancy, growth rate, toughness, N reabsorption, chlorophyll reabsorption |
