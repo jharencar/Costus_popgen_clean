@@ -5,6 +5,8 @@
 | `aHMM_F3/` | Local ancestry (F3 mapping population) |
 | `lepmap3/` | Linkage map input + QC |
 | `rqtl/` | R/qtl scanone, scantwo, stepwiseqtl (`Costus_QTL.qmd`) |
-| `data/` | Phenotype CSV and genotype input (small files only) |
+| `data/` | Pointer only — phenotype / genotype / CI CSVs live in the Dryad data deposit |
 
-**Large files (not in git):** `most_dups_genoprob.rds`, `least_dups_est.rf.rds`, `scantwo.perms/*.rds` — see root README / Dryad package.
+**Data on Dryad (not in this code archive):** phenotype/genotype/CI CSVs
+(`data_qtl/small_inputs/`), `scantwo.perms/*.rds`. Large regenerable cross objects
+(`most_dups_genoprob.rds`, etc.) are also not deposited. See root README / Dryad README.

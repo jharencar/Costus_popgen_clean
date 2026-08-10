@@ -2,11 +2,29 @@
 
 [Access this dataset on Dryad](DOI_PLACEHOLDER)
 
-This is the **data** deposit for analyses in the manuscript, "Divergent habitat selection across many loci maintains species boundaries during introgression." The analyses investigate ecogeographic isolation, introgression, and QTL for habitat-associated traits in Neotropical *Costus allenii* and *C. villosissimus*. It contains (1) QTL `scantwo` permutation results, (2) small phenotype / genotype / QTL-CI tables and sample metadata, and (3) PIXY and Dsuite window tables used by manuscript figure scripts.
+This is the **data** deposit for analyses in the manuscript, "Divergent habitat selection across many loci maintains species boundaries during introgression." The analyses investigate ecogeographic isolation, introgression, and QTL for habitat-associated traits in Neotropical *Costus allenii* and *C. villosissimus*.
 
-**Analysis code is archived separately** on Zenodo under the MIT license (deposited via Dryad's software route) and developed openly at [https://github.com/jharencar/Costus_popgen_clean](https://github.com/jharencar/Costus_popgen_clean). See **Sharing/Access information** and **Code/Software**.
+## How to use the Dryad and Zenodo deposits together
 
-**Not included here** (available elsewhere or regenerable): the analysis code (Zenodo/GitHub); the large R/qtl cross objects (`*_genoprob.rds`, `est.rf.rds`), which are rebuilt from the deposited CSV inputs by the R/qtl scripts; raw FASTQs, BAMs, VCFs, Ancestry_HMM posterior files, and other large intermediates. See **Sharing/Access information**.
+This manuscript is archived as **two linked deposits** so data and code can carry appropriate licenses:
+
+| Deposit | Contents | License |
+| ------- | -------- | ------- |
+| **This Dryad deposit** | Data tables and expensive-to-recompute QTL permutation objects (listed below) | **CC0** (Dryad policy) |
+| **Linked Zenodo software deposit** | Analysis scripts and documentation only (`01_`–`04_`, `scripts/`, docs, `LICENSE`) | **MIT** |
+
+**No data files are duplicated between the two deposits.** Phenotype / genotype / QTL-CI CSVs, the sample manifest, PIXY and Dsuite window tables, and `scantwo` permutation `.rds` files live **only on Dryad**. Zenodo contains **code only**.
+
+### Recommended workflow
+
+1. Download **this Dryad data package** and unpack it (e.g. to `Costus_Dryad_data/`).
+2. Download the **Zenodo code archive** (linked from this Dryad record) and unpack it (e.g. to `Costus_popgen_clean/`).
+3. Point the code at the data with environment variables (see **Code/Software**), then run scripts from the code tree. For QTL reuse: use the Dryad CSVs in `data_qtl/small_inputs/` with the R/qtl scripts in the Zenodo archive; use Dryad `data_qtl/scantwo.perms/` for stepwise QTL penalties; use Dryad `data_figure_inputs/` for genome-wide figure scripts in `04_introgression_vs_QTL/`.
+4. For full pipeline regeneration from raw sequence, also download NCBI SRA BioProject [PRJNA1479894](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1479894) and the *C. lasius* reference [GCA_027563935.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_027563935.1/).
+
+Development copies of the code also live on GitHub: [https://github.com/jharencar/Costus_popgen_clean](https://github.com/jharencar/Costus_popgen_clean). Prefer the Zenodo archive for a citable, frozen snapshot.
+
+**Not included in either deposit** (regenerable): large R/qtl cross objects (`*_genoprob.rds`, `est.rf.rds`); raw FASTQs, BAMs, VCFs, Ancestry_HMM posteriors, and other large intermediates.
 
 Package build date: `2026-07-27`. A SHA-256 checksum of the data zip is provided alongside the download (`Costus_popgen_Dryad_data_20260727.zip.sha256`).
 
@@ -32,7 +50,6 @@ Full methods prose is in the manuscript, "Divergent habitat selection across man
 
 ```
 Costus_Dryad_data/
-  DRYAD_README.md                 # this file (uploaded to Dryad separately, not in the zip)
   sample_manifest/
     combined_sample_manifest.tsv  # sample metadata (wild + mapping population)
   data_qtl/
@@ -44,32 +61,28 @@ Costus_Dryad_data/
   manifest/                       # build date
 ```
 
-The analysis **code** is not in this deposit; it is archived on Zenodo (MIT) and on
-GitHub (see **Sharing/Access information**). The large R/qtl cross objects
-(`*_genoprob.rds`, `est.rf.rds`) are also omitted and are regenerated from the CSVs in
-`data_qtl/small_inputs/` by the R/qtl scripts.
+This README is the single documentation file for the paired deposits (entered in Dryad's
+README field; not duplicated inside the data zip or the Zenodo code zip). Analysis **code**
+is only on Zenodo/GitHub. Large R/qtl cross objects (`*_genoprob.rds`, `est.rf.rds`) are
+omitted and are regenerated from the CSVs in `data_qtl/small_inputs/` by the R/qtl scripts.
 
 ### How the pieces relate
 
-1. Use the **code archive** (Zenodo/GitHub) with NCBI FASTQs (and the reference genome) to regenerate pipelines from scratch, **or**
-2. Point the code's `scripts/project_paths.R` at this data deposit (see **Code/Software**) to reload the figure-input tables and permutation objects without re-running cluster jobs.
+1. Use the **Zenodo code archive** with NCBI FASTQs (and the reference genome) to regenerate pipelines from scratch, **or**
+2. Point the code's `scripts/project_paths.R` at **this Dryad data deposit** (see **Code/Software**) to reload the figure-input tables, QTL CSVs, and permutation objects without re-running cluster jobs.
 3. `data_qtl/small_inputs/` are the tabular phenotype/genotype/CI inputs used to build / annotate the R/qtl cross objects (the cross objects themselves are regenerated, not deposited).
-4. `sample_manifest/combined_sample_manifest.tsv` is the sample metadata table (wild + mapping population).
-5. `data_figure_inputs/` are the windowed summary tables read by the introgression-vs-QTL and genome-wide figure scripts in the code archive (`04_introgression_vs_QTL/`; related plotting scripts are documented in the code's `NOTES.md`).
-
-
+4. `sample_manifest/combined_sample_manifest.tsv` is the sample metadata table (wild + mapping population); **Dryad only**.
+5. `data_figure_inputs/` are the windowed summary tables read by the introgression-vs-QTL and genome-wide figure scripts in the Zenodo code archive (`04_introgression_vs_QTL/`).
 
 ### File descriptions
 
+#### Code (Zenodo only — not in this zip)
 
-
-#### Code (archived separately)
-
-The analysis code is **not** in this Dryad deposit. It is archived on **Zenodo** under the **MIT license** (Zenodo DOI in **Sharing/Access information**) and developed openly at `https://github.com/jharencar/Costus_popgen_clean`. The code tree contains the read-processing, population-genetics, QTL-mapping, and introgression-vs-QTL scripts (`01_`–`04_`), `scripts/project_paths.R` for path resolution, `sample_manifest/`, and documentation (`README.md`, `NOTES.md`).
+The analysis code is archived on **Zenodo** under the **MIT license** (DOI in **Sharing/Access information**) and developed openly at [https://github.com/jharencar/Costus_popgen_clean](https://github.com/jharencar/Costus_popgen_clean). The code tree contains read-processing, population-genetics, QTL-mapping, and introgression-vs-QTL scripts (`01_`–`04_`), `scripts/project_paths.R`, and documentation (`README.md`, `NOTES.md`, `LICENSE`). It does **not** include any of the data files listed below.
 
 #### `sample_manifest/combined_sample_manifest.tsv`
 
-Final sample metadata for wild collections and the QTL mapping population (**524** rows; one row per unique `sample_id`). This is the only sample table in the deposit (build scripts and NCBI source tables are not included; an identical copy ships with the code archive).
+Final sample metadata for wild collections and the QTL mapping population (**524** rows; one row per unique `sample_id`). This is the only sample table in the deposit (build scripts and NCBI source tables are not included).
 
 
 | Column                  | Definition                            |
@@ -272,17 +285,24 @@ Data were derived from the following sources:
 
 ### Recommended environment variables
 
-After unpacking this data deposit **and** the code archive (Zenodo/GitHub):
+After unpacking **this Dryad data deposit** and the **Zenodo code archive**:
 
 ```bash
-export COSTUS_ARCHIVE="/path/to/Costus_Dryad_data"       # this data deposit
-export PROJECT_ROOT="/path/to/Costus_popgen_clean"        # code archive (Zenodo/GitHub)
-# Cross object is not deposited; point this at one you regenerate from the CSVs:
+export COSTUS_ARCHIVE="/path/to/Costus_Dryad_data"       # this Dryad data deposit
+export PROJECT_ROOT="/path/to/Costus_popgen_clean"        # Zenodo code archive
+# Phenotype / genotype / CI CSVs live only on Dryad:
+export QTL_CI_PATH="${COSTUS_ARCHIVE}/data_qtl/small_inputs/all_QTL_CIs_bp_cm.251130.csv"
+export SAMPLE_MANIFEST="${COSTUS_ARCHIVE}/sample_manifest/combined_sample_manifest.tsv"
+# Cross object is not deposited; point this at one you regenerate from the Dryad CSVs:
 export GENOPROB_RDS="/path/to/your_regenerated_most_dups_genoprob.rds"
 export PIXY_FOLDER="${COSTUS_ARCHIVE}/data_figure_inputs/pixy_output_251124_LASIref"
 export DSUITE_DIR="${COSTUS_ARCHIVE}/data_figure_inputs/Dsuite_Fstats_w50s25_LASIref_251120"
 export SCANTWO_PERM_DIR="${COSTUS_ARCHIVE}/data_qtl/scantwo.perms"
 ```
+
+Copy the Dryad CSVs from `data_qtl/small_inputs/` into a working directory (or set paths
+explicitly) when running `03_QTL_mapping/rqtl/Costus_QTL.qmd`, which historically expected
+`F3phe_onehotcovar_newHI_20250925.csv` and `f3gen_250924_...csv` in the working directory.
 
 Then in R from the code archive:
 

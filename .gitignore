@@ -101,3 +101,7 @@ _local_root_duplicates/
 /fdm_*
 /combo_*.png
 /sup_*.png
+
+# Data files archived on Dryad (CC0) only — do not ship with MIT code / Zenodo
+/sample_manifest/combined_sample_manifest.tsv
+/03_QTL_mapping/data/*.csv

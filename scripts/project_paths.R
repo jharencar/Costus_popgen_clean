@@ -114,9 +114,41 @@ project_paths <- function() {
     vcf_dir = Sys.getenv("VCF_DIR", file.path(archive, "02_VCFs")),
     rqtl_dir = rqtl_dir,
     scantwo_perm_dir = scantwo_perm_dir,
+    # QTL CI / phenotype / genotype CSVs and sample manifest live on Dryad only
+    # (not redistributed with this MIT-licensed code archive).
     qtl_ci_path = Sys.getenv(
       "QTL_CI_PATH",
-      file.path(root, "03_QTL_mapping", "data", "all_QTL_CIs_bp_cm.251130.csv")
+      .first_existing_file(c(
+        file.path(archive, "data_qtl", "small_inputs", "all_QTL_CIs_bp_cm.251130.csv"),
+        file.path(root, "03_QTL_mapping", "data", "all_QTL_CIs_bp_cm.251130.csv")
+      ))
+    ),
+    sample_manifest = Sys.getenv(
+      "SAMPLE_MANIFEST",
+      .first_existing_file(c(
+        file.path(archive, "sample_manifest", "combined_sample_manifest.tsv"),
+        file.path(root, "sample_manifest", "combined_sample_manifest.tsv")
+      ))
+    ),
+    qtl_phe_path = Sys.getenv(
+      "QTL_PHE_PATH",
+      .first_existing_file(c(
+        file.path(archive, "data_qtl", "small_inputs", "F3phe_onehotcovar_newHI_20250925.csv"),
+        file.path(root, "03_QTL_mapping", "data", "F3phe_onehotcovar_newHI_20250925.csv")
+      ))
+    ),
+    qtl_gen_path = Sys.getenv(
+      "QTL_GEN_PATH",
+      .first_existing_file(c(
+        file.path(
+          archive, "data_qtl", "small_inputs",
+          "f3gen_250924_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001.csv"
+        ),
+        file.path(
+          root, "03_QTL_mapping", "data",
+          "f3gen_250924_minGTP3_minDif0.7_dist5k_minDP0.05_pulse0.0001.csv"
+        )
+      ))
     )
   )
 }
