@@ -1,0 +1,7 @@
+"outlier_level","qtl_set","statistic","alternative","tail_prob","n_qtl","n_peaks_genome","threshold","observed_n_peaks","null_mean_n_peaks","p_n_peaks","observed_n_cis","p_n_cis","observed_overlap_bp","p_overlap_bp"
+"p95_noSD","all_retained","fst","enrichment",0.95,5,3989,0.415025677824752,123,109.2102,0.266273372662734,5,1,1349877,0.2995700429957
+"p95_noSD","all_retained","f_dM","depletion",0.95,5,2336,0.3450526,60,64.7697,0.494350564943506,5,1,507861,0.205879412058794
+"p95_noSD","all_retained","dxy","enrichment",0.95,5,4106,0.0250528247563914,98,115.2507,0.778522147785221,5,1,1159902,0.744625537446255
+"p95_noSD","non_antagonistic","fst","enrichment",0.95,3,3989,0.415025677824752,72,62.2489,0.258674132586741,3,1,799928,0.276572342765723
+"p95_noSD","non_antagonistic","f_dM","depletion",0.95,3,2336,0.3450526,25,39.9191,0.293770622937706,3,1,205008,0.146685331466853
+"p95_noSD","non_antagonistic","dxy","enrichment",0.95,3,4106,0.0250528247563914,47,62.1683,0.832316768323168,3,1,579953,0.770922907709229

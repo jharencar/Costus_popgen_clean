@@ -56,21 +56,26 @@ Apply unless an analysis block below overrides.
 - **756-gene capture**, hard genotypes; **Dtrios**; **25,978** variants; **20** jackknife blocks (~1297 variants/block).
 - Pops: 1 *bracteatus* (CR), 1 *allenii* (Panama), 1 *villosissimus* (Ecuador), 2 *lasius* (Panama + Peru).
 
-#### PIXY — π and D~xy~ (genome-wide differentiation)
+#### PIXY — π, D~xy~, and Hudson F~ST~
 
 - **All-sites VCF** (invariant sites included): bcftools mpileup + core filters above + **<80% missing per species**.
-- Windows: **10 kb non-overlapping**; PIXY → average π within species, D~xy~ between species.
-- **Repo:** `genome-wide_Fst.Dxy_w_QTL_plots.R`, pixy two-panel chr plots; combo figures stack pixy with Dsuite (shared cumulative x).
+- Windows: **10 kb** and **500 kb**, both non-overlapping. π and D~xy~ are pixy's ratio of `count_diffs / count_comparisons`.
+- **F~ST~:** Hudson estimator (`--fst_type hudson`), which is the two-population estimator recommended by Bhatia et al. 2013. Each window's `avg_hudson_fst` is already the ratio of summed numerator and denominator. `--fst_components` keeps `hudson_fst_num` and `hudson_fst_den`.
+- **500 kb line** on the along-genome plots is the 500 kb pixy file, not a mean of 10 kb windows. A 500 kb window is drawn when at least half of its 10 kb slots pass the filter below. Adjacent kept windows are connected; a dropped window breaks the line.
+- **10 kb filter (all current F~ST~ and D~xy~ plots):** F~ST~ windows need **≥10 SNPs**. D~xy~ windows need **≥1000 sites** (10% of a 10 kb window). The 1 cM and 0.1 cM summaries are built from those passing 10 kb rows. Pi is not filtered.
+- **1 cM F~ST~** and QTL-interval F~ST~ are `sum(hudson_fst_num) / sum(hudson_fst_den)` over the passing 10 kb rows in the bin. Pixy cannot emit centimorgan windows. 1 cM D~xy~ is the mean of the passing 10 kb `avg_dxy` values.
+- **Original-submission Weir–Cockerham tables** (`output_251124_LASIref`, column `avg_wc_fst`) are the November 2025 run. Current scripts refuse that column. Snapshot of those scripts: `_originals/wc_fst_original_submission/`. The Hudson scripts are the version that replaces that submission.
+- **Repo:** `02_population_genetics_wild/pixy/run_pixy_array.slurm` (Farm; submit at both window sizes), `genome-wide_Fst.Dxy_w_QTL_plots.R`, pixy chromosome plots; combo figures stack pixy with Dsuite (shared cumulative x).
 
 #### Dsuite — *f*~dM~ (introgression sliding windows)
 
 - **50 variant** windows, **25 variant** step (`w50s25` in paths/filenames); **Dinvestigate**; **biallelic SNPs** only; **>3 bp** from indels; AF **0.05–0.95**; same qual/coverage/mappability as core pipeline.
 - **Samples:** **21** *bracteatus*, **21** *allenii*, **18** *villosissimus*, **2** *lasius* + *lasius* reference; **no PCA hybrids**.
-- **Repo only:** highlight extreme |*f*~dM~| at **99.9th percentile** among negative windows (qmd/combo convention); manuscript F~ST~ figures use **99th percentile** outlier highlighting (different stat/plot).
+- **Repo only:** highlight extreme |*f*~dM~|, *d*~f~, D~xy~, and F~ST~ at the **99th percentile** (two-tailed stats use the 1st and 99th percentiles). The older 99.9th-percentile highlight is retired.
 
 #### F~ST~ vs introgression / QTL (repo extensions)
 
-- Manuscript QTL comparison: **10 kb** F~ST~ windows + **1 cM** windowed averages; **chr4 excluded** from cM mapping (poor Lep-MAP3 join).
+- Manuscript QTL comparison: **10 kb** Hudson F~ST~ windows + **1 cM** ratios of Hudson components; **chr4 excluded** from cM mapping (poor Lep-MAP3 join). The along-genome line is a separate **500 kb** pixy run.
 - **Repo:** `fd_fdm_vs_fst_100kb_bins.R` — **100 kb** bins, pixy SNP-weighted F~ST~ from 10 kb tiles + Dsuite *f*~d~/*f*~dM~/*d*~f~ with **stride-2** (or greedy) thinning on w50s25 windows (not in manuscript).
 
 ### QTL / mapping population (shorter)
@@ -203,9 +208,9 @@ Also referenced in [`QTL/plot_GR_Nreabs_qtl_minimal.R`](QTL/plot_GR_Nreabs_qtl_m
 | Wild *villosissimus* after coverage filter | 20 (38−10−3 allenii only listed) | ABBA-BABA / *f*~dM~ use **18** (hybrid exclusion + analysis set) |
 | F3 count | 390 collected; **389** in Lep-MAP | **385** in final QTL cross |
 | aHMM posterior filter | Not stated | **>0.9** on ref/alt/het (plotting) |
-| F~ST~ outlier highlight | **99th** percentile (figures) | *f*~dM~ plots often **99.9th** percentile |
+| Outlier highlight | **99th** percentile | F~ST~, D~xy~, *f*~dM~, and *d*~f~ figures all use the **99th** percentile |
 | F~ST~ vs *f*~dM~ correlation | — | **100 kb** bins + stride-2 (`fd_fdm_vs_fst_100kb_bins.R`) |
-| PIXY / F~ST~ window size | **10 kb** non-overlapping | Same in repo histogram/QTL scripts |
+| PIXY / F~ST~ | **10 kb** Weir–Cockerham in the 251124 deposit | Current code: Hudson **10 kb** points, Hudson **500 kb** line, 1 cM F~ST~ = ratio of components |
 
 ---
 
@@ -356,3 +361,95 @@ Canonical: `03_QTL_mapping/rqtl/run_scantwo_per_trait.R` + `slurm/run_scantwo_al
 Scripts: `genome-wide_Fst.Dxy_w_QTL_plots.R`, `combo_Dsuite_pixy_4panel_fdm_df_dxy_fst.R`.  
 1 cM Fst/Dxy/fdM histograms: 5th/95th percentiles as **red tail shading** (not dashed red lines).  
 `sup_Dxy_fdM_QTL_window_distributions.pdf` also written to `Figures&Tables/` (parent of `Final_figures/`).
+
+---
+
+## Session: simplified 1 cM Fst density (2026-08-27)
+
+First-pass companion to `Fst_genomewide_distribution_w_QTL_windows.png` in `04_introgression_vs_QTL/genome-wide_Fst.Dxy_w_QTL_plots.R`. Same 1 cM window averages and QTL CI means; **no histogram**, **no 5th/95th percentile shading**, **no trait colors**.
+
+- Black `geom_density()` of genome-wide 1 cM mean Fst
+- Light-grey (`grey60`) solid `geom_vline()` at mean Fst within each QTL 95% CI
+- White panel, no grid; x-axis label **Distribution of Fst (1cM windows)**
+- Output: `Fst_genomewide_distribution_w_QTL_windows_simplified.png` (project root)
+- After a full run, `Fst_1cM_window_cache.rds` (gitignored) lets the simplified `ggsave` chunk be re-run alone to tweak size without reloading pixy.
+
+The original colored histogram figure is unchanged.
+
+---
+
+## Session: Hudson Fst rerun (2026-10-13)
+
+Reviewer point (Bhatia et al. 2013): combine SNPs as a ratio of averages, and for two populations prefer the Hudson estimator over Weir–Cockerham.
+
+- Farm job [`02_population_genetics_wild/pixy/run_pixy_array.slurm`](02_population_genetics_wild/pixy/run_pixy_array.slurm): `--fst_type hudson --fst_components`, submitted at **10 kb** and **500 kb**. Output dirs `pixy_hudson_10kb` and `pixy_hudson_500kb` on quobyte. `run_pixy_avonly.sh` (50 kb Weir–Cockerham) exits immediately; the full original-submission script is under `_originals/wc_fst_original_submission/`.
+- Along-genome **500 kb line** is `avg_hudson_fst` / `avg_dxy` from the 500 kb pixy files. The R mean of 10 kb windows was removed.
+- **1 cM** and QTL-interval F~ST~ stay in `genome-wide_Fst.Dxy_w_QTL_plots.R` because the bins are centimorgans. They use `sum(hudson_fst_num) / sum(hudson_fst_den)`. The simplified-density cache is `Fst_1cM_window_cache_hudson.rds`; do not reload `Fst_1cM_window_cache.rds`.
+- 1 cM D~xy~ is still `mean(avg_dxy)`. Dsuite `f_dM` / `d_f` 500 kb lines are unchanged (pixy does not calculate them).
+- Plotting scripts stop if the folder has `avg_wc_fst` and no `avg_hudson_fst`, so `output_251124_LASIref` cannot be plotted by the current code.
+- Figures are regenerated only after both Farm tables are on disk (`PIXY_FOLDER`, `PIXY_FOLDER_500KB`).
+
+---
+
+## Session: 10 kb QTL-CI distributions (2026-10-28)
+
+Additional versions of the 1 cM distribution figures, in `04_introgression_vs_QTL/genome-wide_Fst.Dxy_w_QTL_plots.R`. The 1 cM plots are unchanged.
+
+- Genome-wide background: histogram plus dark-blue density of **10 kb** windows (chromosome 4 excluded). Red bands mark the genome-wide 5th and 95th percentiles.
+- Each QTL is a **density of the 10 kb windows that overlap its 95% CI**, colored by trait. Antagonistic QTL (SD chr6, toughness chr3, toughness chr8) are dashed. Both toughness QTL share that color and dash.
+- **Fst** keeps 10 kb windows with **≥10 SNPs**. **Dxy** keeps 10 kb windows with **≥1000 sites** (10% of the window). **f_dM** has no extra filter: each 10 kb value is the mean of positive Dsuite w50s25 windows whose midpoint falls in that bin.
+- Axis limits are a display window only (`coord_cartesian`): Fst −0.25 to 0.65, Dxy 0 to 0.04, f_dM 0 to 0.55. Densities use the filtered windows.
+- Files, project root: `Fst_Dxy_fdM_genomewide_distribution_10kb_w_QTL_CI_3panel.png`, `Fst_genomewide_distribution_10kb_w_QTL_CI.png`, `Dxy_fdM_genomewide_distribution_10kb_w_QTL_CI_2panel.png`.
+- Fst panels only: a filled point on each within-CI curve at the Fst of the 10 kb pixy window that contains `peak_bp`, if that window passes the SNP filter.
+
+### 0.1 cM distributions (2026-10-29)
+
+Same figure design, in the same script. The 1 cM figures are unchanged.
+
+- **Fst** 0.1 cM bins are `sum(hudson_fst_num) / sum(hudson_fst_den)` over 10 kb windows with ≥10 SNPs whose start falls in the bin.
+- **Dxy** 0.1 cM bins are the mean of 10 kb `avg_dxy` from windows with ≥1000 sites.
+- **f_dM** 0.1 cM bins are the mean of positive Dsuite windows in the bin (no 10 kb filter).
+- A bin is inside a QTL CI when its interval overlaps the CI on the script's linkage map (`bp_to_cm_funs`: chromosome flips, then isotonic cM). The QTL table's raw cM columns are not used for this overlap. The Fst point is the bin that contains `peak_bp` on that map.
+- Files: `Fst_Dxy_fdM_genomewide_distribution_0.1cM_w_QTL_CI_3panel.png`, `Fst_genomewide_distribution_0.1cM_w_QTL_CI.png`, `Dxy_fdM_genomewide_distribution_0.1cM_w_QTL_CI_2panel.png`.
+
+The same floors now apply to the other F~ST~ and D~xy~ figures: along-genome 10 kb points, the 1 cM histograms (including the simplified F~ST~ density and the max-in-CI 10 kb histogram), the four-panel combo D~xy~ and F~ST~ panels, and `plot_pixy.R`. Pi is not filtered. The 500 kb line is still pixy's own 500 kb estimate, drawn when at least half of the 10 kb slots in that span pass the matching floor. f~dM~ is not filtered. The circular-shift outlier test is not a plot and still uses every finite 10 kb window.
+
+## Session: supplementary Dsuite noNearHybrid 1 km (2026-11-08)
+
+Exclude *C. allenii* / *C. villosissimus* within **1 km** of a PCA hybrid from a
+supplementary Dinvestigate run. Original `Fstats_w50s25_..._251120` unchanged.
+
+- **Kept parents:** geographic include list was 12 allenii + 12 vill; BAVLasi VCF
+  intersection is **9 alle + 12 vill** (`19.497`, `19.508`, `19.553` absent from VCF).
+  Map outlines and `alle_vill_include_IDs.txt` match that VCF set (21 parents).
+- **Map:** `Figures&Tables/OG_sample_map_Dsuite_noNearHybrid_1km.pdf`
+- **Farm package:** `~/Costus_scripts/dsuite/noNearHybrid_1km/` (also in repo
+  `02_population_genetics_wild/dsuite/noNearHybrid_1km/`).
+- **Staged VCFs:** dissert `Costus_archive/02_VCFs/BAVLasi_LASIref_filtered_scaf/` →
+  `/quobyte/jrigrp/juliah/Costus_data_tmp/VCFs/BAVLasi_LASIref_filtered_scaf/`.
+- **SETS:** `LASIout_SETS_noNearHybrid_1km.txt` (brac=20 alle=9 vill=12 Outgroup=2 xxx=20).
+- **Submitted:** array job `40549436` (after fixing `WORKDIR` to use `SLURM_SUBMIT_DIR`;
+  first attempt `40549387` failed because Slurm spool path broke SETS lookup).
+- **Outputs:** `/quobyte/jrigrp/juliah/Costus_data_tmp/dsuite_noNearHybrid_1km_w50s25/`
+- **Dsuite binary:** built on Farm into `~/bin/Dsuite` (conda `dsuite` env for libstdc++).
+- **Subset pixy (Farm, same 21 parents):** jobs `40563512` (10 kb) and `40563513`
+  (500 kb) **COMPLETED**; popfile `~/Costus_scripts/pixy_noNearHybrid_1km/avonly_populations_noNearHybrid_1km.txt`;
+  Farm outputs `pixy_hudson_{10kb,500kb}_noNearHybrid_1km/`; local copies under `pixy/`.
+  Fully subset combo 4-panel + circular-shift remade in
+  `04_introgression_vs_QTL/noNearHybrid_1km/` (subset Dsuite + subset pixy).
+
+## Session: Fst chromosome-panel point styling (2026-11-11)
+
+Along-genome Fst panels in `04_introgression_vs_QTL/genome-wide_Fst.Dxy_w_QTL_plots.R`
+(`Fst_10kb_LASIout_separate_chrs_w.500kb.avg_7QTL_narrowed.CIs`, 2-panel chr
+figures, and `sup_genomewide_Fst_QTL_CIs`):
+
+- Background 10 kb points: `size = 1`, `alpha = 0.35`, `grey50`
+- 99th-percentile outliers: `geom_point_rast` `size = 1.5` (grey is `size = 1`; opaque singles
+  read smaller than overlapping translucent grey), `alpha = 1`, `#D62728`, `raster.dpi >= 600`
+- Thin dashed `#D62728` `geom_hline` at the genome-wide 99th percentile
+- All panels: `coord_cartesian(ylim = c(0, 1))` (display window only)
+- 500 kb darkred line unchanged
+- Fast replot while iterating (pixy + QTL only): `Rscript 04_introgression_vs_QTL/replot_fst_chr_panels.R`
+- Also writes a **single-column** 8-panel stack (`*_1col.pdf/png`, 22 × 48 cm) so each chromosome track is wider than in the 2×4 grid.
+- Layer order: grey 10 kb points → QTL CI/peak → dashed 99th line + red outliers + darkred 500 kb average (so outliers/avg sit on top of QTL).

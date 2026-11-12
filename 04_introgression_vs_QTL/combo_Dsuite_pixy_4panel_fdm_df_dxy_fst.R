@@ -4,7 +4,7 @@
 # Same stacked layout as Population_genetics_vill_alle.qmd combo_Dsuite_pixy_5panel
 # (f_dM / d_f / Dxy / pi / Fst), but with four panels only: f_dM, d_f, Dxy, Fst (no pi).
 # f_dM is plotted on the full signed scale (positive and negative); cutoffs are symmetric
-# from the 99.9th percentile of |f_dM| among negative windows (qmd convention).
+# from the 99th percentile of |f_dM| among negative windows (qmd convention).
 # QTL: 95% CI ribbons + peak vlines from QTL/all_QTL_CIs_bp_cm.251130.csv (same filters as
 # genome-wide_*_w_QTL_plots.R); x positions use cumulative bp (Dsuite offsets for f_dM/d_f,
 # pixy offsets for Dxy/Fst). CI layers are drawn last so they appear above the points.
@@ -39,6 +39,11 @@ final_figures_dir <- file.path(
   "Library/CloudStorage/GoogleDrive-jgharencar@ucdavis.edu",
   "My Drive/Costus/PopGen/Figures&Tables/Final_figures"
 )
+if (nzchar(Sys.getenv("PLOT_OUT_ROOT", ""))) {
+  project_root <- Sys.getenv("PLOT_OUT_ROOT")
+  final_figures_dir <- project_root
+  dir.create(project_root, recursive = TRUE, showWarnings = FALSE)
+}
 point_size <- 3
 combo_raster_dpi <- 300
 legend_text_size <- 40
@@ -53,9 +58,23 @@ trait_colors <- c(
 )
 
 # Same row filters as genome-wide_Fst.Dxy_w_QTL_plots.R / genome-wide_*_w_QTL_plots.R
+# Opposite of expected species direction: dashed peaks. GR chromosome 5 is listed
+# and is already removed by the CI filter.
+opposite_direction_qtl <- tibble::tribble(
+  ~trait, ~chr,
+  "SD", 6L,
+  "GR", 5L,
+  "tough", 3L,
+  "tough", 8L
+)
 all_QTL_CI <- read.csv(qtl_ci_path, header = TRUE) %>%
   filter(!chr == 2 | !trait == "Nreabs") %>%
-  filter(!chr == 5 | !trait == "GR")
+  filter(!chr == 5 | !trait == "GR") %>%
+  mutate(
+    opposite_direction = paste(trait, as.integer(chr)) %in%
+      paste(opposite_direction_qtl$trait, opposite_direction_qtl$chr),
+    qtl_linetype = ifelse(opposite_direction, "dashed", "solid")
+  )
 
 # =============================================================================
 # Dsuite: f_dM and d_f (from Population_genetics_vill_alle.qmd "Plotting f_dM and d_f")
@@ -67,9 +86,9 @@ for (file in file_list) {
   LASIout_w50s25_all9 <- rbind(LASIout_w50s25_all9, temp_df)
 }
 
-cutoff99.9thPercentile <- quantile(
+cutoff99thPercentile <- quantile(
   abs(LASIout_w50s25_all9$f_dM[LASIout_w50s25_all9$f_dM < 0]),
-  0.999
+  0.99
 )
 
 data_cum <- LASIout_w50s25_all9 %>%
@@ -133,10 +152,27 @@ pixy_to_long <- function(pixy_files) {
     arrange(pop1, pop2, chromosome, window_pos_1, statistic)
 }
 
-pixy_files <- list.files(pixy_folder, full.names = TRUE)
+if (is.na(pixy_folder) || !nzchar(pixy_folder) || !dir.exists(pixy_folder)) {
+  stop("10 kb pixy folder not found: ", pixy_folder, "\nSet PIXY_FOLDER to the Hudson run.")
+}
+pixy_files <- list.files(pixy_folder, pattern = "_(pi|dxy|fst)\\.txt$", full.names = TRUE)
+if (length(pixy_files) == 0) {
+  stop("No pixy *_pi.txt / *_dxy.txt / *_fst.txt files in ", pixy_folder)
+}
 pixy_df <- pixy_to_long(pixy_files)
 pixy_wide <- pivot_wider(pixy_df, names_from = statistic, values_from = value) %>%
   mutate(chr_position = ((window_pos_1 + window_pos_2) / 2) / 1000000)
+if (!"avg_hudson_fst" %in% names(pixy_wide)) {
+  if ("avg_wc_fst" %in% names(pixy_wide)) {
+    stop("Pixy folder is Weir–Cockerham (avg_wc_fst). Use the Hudson run, not output_251124_LASIref.")
+  }
+  stop("Pixy folder is missing avg_hudson_fst: ", pixy_folder)
+}
+pixy_wide <- pixy_wide %>%
+  mutate(across(
+    any_of(c("avg_hudson_fst", "avg_dxy", "avg_pi", "no_snps", "no_sites")),
+    ~ suppressWarnings(as.numeric(.x))
+  ))
 
 pixy_data_cum <- pixy_wide %>%
   group_by(chromosome) %>%
@@ -173,14 +209,14 @@ combo_xlim <- c(
 # Data limits + small symmetric buffer (tighter than genome-wide 0.018)
 x_expand <- expansion(mult = 0.012, add = 0)
 
-LASI_99.9thper_w50s25_f_dM <- ggplot(
+LASI_99thper_w50s25_f_dM <- ggplot(
   data = LASIout_w50s25_all9,
   aes(x = windowStart_cum, y = f_dM, color = as_factor(chr))
 ) +
   geom_hline(yintercept = 0, color = "grey55", linewidth = 0.35) +
   geom_point_rast(size = point_size, raster.dpi = combo_raster_dpi) +
   geom_hline(
-    yintercept = c(cutoff99.9thPercentile, -cutoff99.9thPercentile),
+    yintercept = c(cutoff99thPercentile, -cutoff99thPercentile),
     linetype = "dashed",
     color = "red"
   ) +
@@ -189,7 +225,7 @@ LASI_99.9thper_w50s25_f_dM <- ggplot(
   geom_point_rast(
     data = subset(
       LASIout_w50s25_all9,
-      f_dM > cutoff99.9thPercentile | f_dM < -cutoff99.9thPercentile
+      f_dM > cutoff99thPercentile | f_dM < -cutoff99thPercentile
     ),
     color = "red",
     size = point_size,
@@ -211,28 +247,29 @@ LASI_99.9thper_w50s25_f_dM <- ggplot(
   ) +
   geom_vline(
     data = qtl_dsuite,
-    aes(xintercept = peak_cum),
+    aes(xintercept = peak_cum, linetype = qtl_linetype),
     color = trait_colors[as.character(qtl_dsuite$trait)],
     linewidth = 0.7
   ) +
+  scale_linetype_identity(guide = "none") +
   theme(
     axis.text = element_text(size = 30),
     axis.title = element_text(size = 30),
     plot.margin = unit(c(2, 1, 1, 1), "cm")
   )
 
-cutoff99.9thPercentile_d_f <- quantile(
+cutoff99thPercentile_d_f <- quantile(
   abs(LASIout_w50s25_all9$d_f[which(LASIout_w50s25_all9$d_f < 0)]),
-  0.999
+  0.99
 )
 
-LASI_99.9thper_w50s25_d_f <- ggplot(
+LASI_99thper_w50s25_d_f <- ggplot(
   data = LASIout_w50s25_all9,
   aes(x = windowStart_cum, y = d_f, color = as_factor(chr))
 ) +
   geom_point_rast(size = point_size, raster.dpi = combo_raster_dpi) +
   geom_hline(
-    yintercept = c(cutoff99.9thPercentile_d_f, -cutoff99.9thPercentile_d_f),
+    yintercept = c(cutoff99thPercentile_d_f, -cutoff99thPercentile_d_f),
     linetype = "dashed",
     color = "red"
   ) +
@@ -241,7 +278,7 @@ LASI_99.9thper_w50s25_d_f <- ggplot(
   geom_point_rast(
     data = subset(
       LASIout_w50s25_all9,
-      d_f > cutoff99.9thPercentile_d_f | d_f < -cutoff99.9thPercentile_d_f
+      d_f > cutoff99thPercentile_d_f | d_f < -cutoff99thPercentile_d_f
     ),
     color = "red",
     size = point_size,
@@ -263,14 +300,21 @@ LASI_99.9thper_w50s25_d_f <- ggplot(
   ) +
   geom_vline(
     data = qtl_dsuite,
-    aes(xintercept = peak_cum),
+    aes(xintercept = peak_cum, linetype = qtl_linetype),
     color = trait_colors[as.character(qtl_dsuite$trait)],
     linewidth = 0.7
   ) +
+  scale_linetype_identity(guide = "none") +
   theme(axis.text = element_text(size = 40), axis.title = element_text(size = 40))
 
-cutoff99.9thPercentile.dxy <- quantile(pixy_wide$avg_dxy, 0.999, na.rm = TRUE)
-Dxy_plot <- ggplot(data = pixy_wide, aes(x = windowStart_cum, y = avg_dxy, color = as_factor(chromosome))) +
+# Same 10 kb floors as genome-wide_Fst.Dxy_w_QTL_plots.R. Axis limits stay on the
+# unfiltered chromosome span so this panel still aligns with the Dsuite panels.
+pixy_dxy <- pixy_wide %>%
+  filter(is.finite(avg_dxy), is.finite(no_sites), no_sites >= 1000)
+pixy_fst <- pixy_wide %>%
+  filter(is.finite(avg_hudson_fst), is.finite(no_snps), no_snps >= 10)
+cutoff99thPercentile.dxy <- quantile(pixy_dxy$avg_dxy, 0.99, na.rm = TRUE)
+Dxy_plot <- ggplot(data = pixy_dxy, aes(x = windowStart_cum, y = avg_dxy, color = as_factor(chromosome))) +
   geom_point_rast(size = point_size, raster.dpi = combo_raster_dpi) +
   scale_color_manual(values = rep(c("black", "darkgray"), unique(length(axis_set_pixy$chromosome)))) +
   guides(color = "none") +
@@ -281,9 +325,9 @@ Dxy_plot <- ggplot(data = pixy_wide, aes(x = windowStart_cum, y = avg_dxy, color
     expand = x_expand
   ) +
   labs(x = NULL, y = "Dxy") +
-  geom_hline(yintercept = cutoff99.9thPercentile.dxy, linetype = "dashed", color = "red") +
+  geom_hline(yintercept = cutoff99thPercentile.dxy, linetype = "dashed", color = "red") +
   geom_point_rast(
-    data = subset(pixy_wide, avg_dxy > cutoff99.9thPercentile.dxy),
+    data = subset(pixy_dxy, avg_dxy > cutoff99thPercentile.dxy),
     color = "red",
     size = point_size,
     raster.dpi = combo_raster_dpi
@@ -297,15 +341,16 @@ Dxy_plot <- ggplot(data = pixy_wide, aes(x = windowStart_cum, y = avg_dxy, color
   ) +
   geom_vline(
     data = qtl_pixy,
-    aes(xintercept = peak_cum),
+    aes(xintercept = peak_cum, linetype = qtl_linetype),
     color = trait_colors[as.character(qtl_pixy$trait)],
     linewidth = 0.7
   ) +
+  scale_linetype_identity(guide = "none") +
   theme(axis.text = element_text(size = 40), axis.title = element_text(size = 40))
 
-upper_99.9thPercentile.fst <- quantile(pixy_wide$avg_wc_fst, 0.999, na.rm = TRUE)
-lower_99.9thPercentile.fst <- quantile(pixy_wide$avg_wc_fst, 0.001, na.rm = TRUE)
-wc_fst_plot <- ggplot(data = pixy_wide, aes(x = windowStart_cum, y = avg_wc_fst, color = as_factor(chromosome))) +
+upper_99thPercentile.fst <- quantile(pixy_fst$avg_hudson_fst, 0.99, na.rm = TRUE)
+lower_99thPercentile.fst <- quantile(pixy_fst$avg_hudson_fst, 0.01, na.rm = TRUE)
+hudson_fst_plot <- ggplot(data = pixy_fst, aes(x = windowStart_cum, y = avg_hudson_fst, color = as_factor(chromosome))) +
   geom_point_rast(size = point_size, raster.dpi = combo_raster_dpi) +
   scale_color_manual(values = rep(c("black", "darkgray"), unique(length(axis_set_pixy$chromosome)))) +
   guides(color = "none") +
@@ -317,14 +362,14 @@ wc_fst_plot <- ggplot(data = pixy_wide, aes(x = windowStart_cum, y = avg_wc_fst,
   ) +
   labs(x = NULL, y = "Fst") +
   geom_hline(
-    yintercept = c(upper_99.9thPercentile.fst, lower_99.9thPercentile.fst),
+    yintercept = c(upper_99thPercentile.fst, lower_99thPercentile.fst),
     linetype = "dashed",
     color = "red"
   ) +
   geom_point_rast(
     data = subset(
-      pixy_wide,
-      avg_wc_fst > upper_99.9thPercentile.fst | avg_wc_fst < lower_99.9thPercentile.fst
+      pixy_fst,
+      avg_hudson_fst > upper_99thPercentile.fst | avg_hudson_fst < lower_99thPercentile.fst
     ),
     color = "red",
     size = point_size,
@@ -339,10 +384,11 @@ wc_fst_plot <- ggplot(data = pixy_wide, aes(x = windowStart_cum, y = avg_wc_fst,
   ) +
   geom_vline(
     data = qtl_pixy,
-    aes(xintercept = peak_cum),
+    aes(xintercept = peak_cum, linetype = qtl_linetype),
     color = trait_colors[as.character(qtl_pixy$trait)],
     linewidth = 0.7
   ) +
+  scale_linetype_identity(guide = "none") +
   theme(axis.text = element_text(size = 40), axis.title = element_text(size = 40))
 
 # =============================================================================
@@ -395,11 +441,12 @@ qtl_legend_plot <- ggplot() +
   )
 qtl_legend_grob <- get_legend(qtl_legend_plot)
 
+# Tag only the four data panels (A–D). Explicit tags so the QTL legend row is not "E)".
 combo_Dsuite_pixy_4panel_fdm_df_dxy_fst <-
-  LASI_99.9thper_w50s25_f_dM +
-  LASI_99.9thper_w50s25_d_f +
+  LASI_99thper_w50s25_f_dM +
+  LASI_99thper_w50s25_d_f +
   Dxy_plot +
-  wc_fst_plot +
+  hudson_fst_plot +
   wrap_elements(full = qtl_legend_grob) +
   plot_layout(
     design = "
@@ -412,7 +459,7 @@ combo_Dsuite_pixy_4panel_fdm_df_dxy_fst <-
     heights = c(0.55, 0.55, 1.45, 1.45, 0.08),
     guides = "keep"
   ) +
-  plot_annotation(tag_levels = "A", tag_suffix = ")") &
+  plot_annotation(tag_levels = list(c("A", "B", "C", "D")), tag_suffix = ")") &
   combo_panel_theme
 
 out_png <- file.path(project_root, "combo_Dsuite_pixy_4panel_fdm_df_dxy_fst.png")

@@ -5,7 +5,11 @@
 #
 # Large data live on the dissert archive (not in git). Override with environment:
 #   COSTUS_ARCHIVE  root archive dir (default: /Volumes/dissert/Costus_archive on macOS)
-#   PIXY_FOLDER, DSUITE_DIR, LEPMAP_DIR, GENOPROB_RDS, POSTERIOR_DIR, WILD_AHMM_DIR
+#   PIXY_FOLDER, PIXY_FOLDER_500KB, DSUITE_DIR, LEPMAP_DIR, GENOPROB_RDS,
+#   POSTERIOR_DIR, WILD_AHMM_DIR
+# PIXY_FOLDER is the Hudson 10 kb run. PIXY_FOLDER_500KB is the Hudson 500 kb run.
+# The November 2025 Weir–Cockerham tables (output_251124_LASIref) are a last-resort
+# fallback for pixy_folder only; plotting scripts refuse avg_wc_fst.
 
 .first_existing_dir <- function(candidates) {
   for (c in candidates) {
@@ -54,9 +58,17 @@ project_paths <- function() {
 
   pixy_folder <- .first_existing_dir(c(
     Sys.getenv("PIXY_FOLDER", ""),
+    file.path(archive, "06_pixy", "pixy_hudson_10kb"),
+    file.path(root, "pixy", "pixy_hudson_10kb"),
     file.path(archive, "06_pixy", "output_251124_LASIref"),
     file.path(archive, "06_pixy", "from_hummingbird", "pixy", "output_latest"),
     file.path(root, "pixy", "output_251124_LASIref")
+  ))
+
+  pixy_folder_500kb <- .first_existing_dir(c(
+    Sys.getenv("PIXY_FOLDER_500KB", ""),
+    file.path(archive, "06_pixy", "pixy_hudson_500kb"),
+    file.path(root, "pixy", "pixy_hudson_500kb")
   ))
 
   dsuite_dir <- .first_existing_dir(c(
@@ -106,6 +118,7 @@ project_paths <- function() {
     project_root = root,
     costus_archive = archive,
     pixy_folder = pixy_folder,
+    pixy_folder_500kb = pixy_folder_500kb,
     dsuite_dir = dsuite_dir,
     lepmap_dir = lepmap_dir,
     genoprob_rds = genoprob_rds,

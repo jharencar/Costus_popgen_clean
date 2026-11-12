@@ -99,8 +99,12 @@ _local_root_duplicates/
 /df_*
 /fd_*
 /fdm_*
+/Fst_*
+/Dxy_*
+/OG_sample_map_*.png
 /combo_*.png
 /sup_*.png
+.tmp_map_inset/
 
 # Data files archived on Dryad (CC0) only — do not ship with MIT code / Zenodo
 /sample_manifest/combined_sample_manifest.tsv

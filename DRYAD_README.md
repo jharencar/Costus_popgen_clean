@@ -194,6 +194,8 @@ PIXY output for *allenii* vs *villosissimus* in **10 kb** non-overlapping window
 
 `*_fst.txt` **columns:** `pop1`, `pop2`, `chromosome`, `window_pos_1`, `window_pos_2`, `avg_wc_fst`, `no_snps`
 
+This deposit is the **Weir–Cockerham** 10 kb run (`avg_wc_fst`). The current plotting scripts do not read it. They expect a later Hudson rerun (`--fst_type hudson --fst_components`) at 10 kb and 500 kb, with `avg_hudson_fst`, `hudson_fst_num`, and `hudson_fst_den`. Those tables are not in this deposit. Point `PIXY_FOLDER` and `PIXY_FOLDER_500KB` at them when they exist.
+
 Population codes: `alle` = *C. allenii*, `vill` = *C. villosissimus*. **Missing windows:** `NA` (or empty numeric fields) when `no_sites` / `no_snps` is 0.
 
 #### `data_figure_inputs/Dsuite_Fstats_w50s25_LASIref_251120/`
@@ -233,7 +235,7 @@ Dsuite `Dinvestigate` local F-statistics for trio *bracteatus*–*allenii*–*vi
 | aHMM                            | Ancestry_HMM local ancestry inference                                           |
 | bp / cM                         | Base pairs / centiMorgans                                                       |
 | CI                              | Credible interval (Bayes; R/qtl `bayesint`)                                     |
-| Fst / F_ST                      | Weir–Cockerham fixation index (PIXY `avg_wc_fst`)                               |
+| Fst / F_ST                      | This deposit: Weir–Cockerham (`avg_wc_fst`). Current code: Hudson (`avg_hudson_fst`) |
 | Dxy / D_xy                      | Absolute divergence (PIXY)                                                      |
 | π / pi                          | Nucleotide diversity (PIXY)                                                     |
 | fdM / *f*_dM                    | Dsuite introgression statistic                                                  |
@@ -295,7 +297,11 @@ export QTL_CI_PATH="${COSTUS_ARCHIVE}/data_qtl/small_inputs/all_QTL_CIs_bp_cm.25
 export SAMPLE_MANIFEST="${COSTUS_ARCHIVE}/sample_manifest/combined_sample_manifest.tsv"
 # Cross object is not deposited; point this at one you regenerate from the Dryad CSVs:
 export GENOPROB_RDS="/path/to/your_regenerated_most_dups_genoprob.rds"
-export PIXY_FOLDER="${COSTUS_ARCHIVE}/data_figure_inputs/pixy_output_251124_LASIref"
+# Deposited 10 kb tables are Weir–Cockerham and are refused by the current scripts:
+# export PIXY_FOLDER="${COSTUS_ARCHIVE}/data_figure_inputs/pixy_output_251124_LASIref"
+# Current scripts (Hudson rerun; not in this deposit):
+export PIXY_FOLDER="/path/to/pixy_hudson_10kb"
+export PIXY_FOLDER_500KB="/path/to/pixy_hudson_500kb"
 export DSUITE_DIR="${COSTUS_ARCHIVE}/data_figure_inputs/Dsuite_Fstats_w50s25_LASIref_251120"
 export SCANTWO_PERM_DIR="${COSTUS_ARCHIVE}/data_qtl/scantwo.perms"
 ```

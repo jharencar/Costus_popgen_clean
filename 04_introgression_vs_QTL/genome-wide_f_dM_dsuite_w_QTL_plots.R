@@ -26,6 +26,11 @@ qtl_ci_path <- paths$qtl_ci_path
 if (!file.exists(qtl_ci_path)) {
   qtl_ci_path <- file.path(project_root, "QTL", "all_QTL_CIs_bp_cm.251130.csv")
 }
+# Optional write root for supplementary reruns (reads still use paths$ / qtl_ci_path).
+if (nzchar(Sys.getenv("PLOT_OUT_ROOT", ""))) {
+  project_root <- Sys.getenv("PLOT_OUT_ROOT")
+  dir.create(file.path(project_root, "Dsuite"), recursive = TRUE, showWarnings = FALSE)
+}
 
 # ---- Dsuite: load window stats ----
 file_list <- list.files(path = dsuite_dir, pattern = "*.txt", full.names = TRUE)
@@ -70,11 +75,11 @@ windowed_stat_avg <- dsuite_wide %>%
 windowed_stat_avg_list <- lapply(1:9, function(i) windowed_stat_avg %>% filter(chrN == i))
 names(windowed_stat_avg_list) <- paste0("chr", 1:9)
 
-# ---- Cutoff: 99.9th % of |stat| (symmetric tail highlight; raw signed y below) ----
-cutoff99.9_abs_stat <- {
+# ---- Cutoff: 99th % of |stat| (symmetric tail highlight; raw signed y below) ----
+cutoff99_abs_stat <- {
   x <- dsuite_wide[[stat_col]]
   x <- x[is.finite(x)]
-  quantile(abs(x), 0.999)
+  quantile(abs(x), 0.99)
 }
 
 plot_chr_combined <- function(raw_df, win_df, cutoff_abs, value_col = stat_col) {
@@ -116,7 +121,7 @@ plots <- lapply(chroms, function(i) {
   plot_chr_combined(
     raw_df = raw_df_i,
     win_df = win_df_i,
-    cutoff_abs = cutoff99.9_abs_stat
+    cutoff_abs = cutoff99_abs_stat
   )
 })
 names(plots) <- paste0("chr", chroms)

@@ -41,16 +41,39 @@ for (p in c(
 }
 paths <- project_paths()
 pixy_folder <- paths$pixy_folder
-if (!dir.exists(pixy_folder)) {
-  stop("pixy output not found: ", pixy_folder, "\nSet PIXY_FOLDER or COSTUS_ARCHIVE.")
+if (is.na(pixy_folder) || !nzchar(pixy_folder) || !dir.exists(pixy_folder)) {
+  stop("pixy output not found: ", pixy_folder, "\nSet PIXY_FOLDER to the Hudson 10 kb run.")
 }
-pixy_files <- list.files(pixy_folder, full.names = TRUE)
+pixy_files <- list.files(pixy_folder, pattern = "_(pi|dxy|fst)\\.txt$", full.names = TRUE)
+if (length(pixy_files) == 0) {
+  stop("No pixy *_pi.txt / *_dxy.txt / *_fst.txt files in ", pixy_folder)
+}
 pixy_df <- pixy_to_long(pixy_files)
+# Fst and Dxy use the same 10 kb floors as the genome-wide figures. Pi is unchanged.
+window_keys <- c("pop1", "pop2", "chromosome", "window_pos_1", "window_pos_2")
+fst_keep <- pixy_df %>%
+  filter(statistic == "no_snps", suppressWarnings(as.numeric(value)) >= 10) %>%
+  distinct(across(all_of(window_keys)))
+dxy_keep <- pixy_df %>%
+  filter(statistic == "no_sites", suppressWarnings(as.numeric(value)) >= 1000) %>%
+  distinct(across(all_of(window_keys)))
+pixy_df <- bind_rows(
+  pixy_df %>% filter(statistic == "avg_pi"),
+  pixy_df %>% filter(statistic == "avg_dxy") %>% inner_join(dxy_keep, by = window_keys),
+  pixy_df %>% filter(statistic == "avg_hudson_fst") %>% inner_join(fst_keep, by = window_keys)
+)
+pixy_stats <- unique(pixy_df$statistic)
+if (!"avg_hudson_fst" %in% pixy_stats) {
+  if ("avg_wc_fst" %in% pixy_stats) {
+    stop("Pixy folder is Weir–Cockerham (avg_wc_fst). Use the Hudson run, not output_251124_LASIref.")
+  }
+  stop("Pixy folder is missing avg_hudson_fst: ", pixy_folder)
+}
 
 # custom labeller for special characters in pi/dxy/fst
 pixy_labeller <- as_labeller(c(avg_pi = "pi",
                                avg_dxy = "D[XY]",
-                               avg_wc_fst = "F[ST]"),
+                               avg_hudson_fst = "F[ST]"),
                              default = label_parsed)
 
 # plotting summary statistics along a single chromosome
@@ -59,7 +82,7 @@ for (i in 1:9) {
   chr_num <- paste0("Chrom", i)
 p <- pixy_df %>%
   filter(chromosome == chr_num) %>% 
-  filter(statistic %in% c("avg_pi", "avg_dxy", "avg_wc_fst")) %>%
+  filter(statistic %in% c("avg_pi", "avg_dxy", "avg_hudson_fst")) %>%
   mutate(chr_position = ((window_pos_1 + window_pos_2)/2)/1000000) %>%
   ggplot(aes(x = chr_position, y = value, color = statistic))+
   geom_line(size = 0.25)+
@@ -92,7 +115,7 @@ pixy_df %>%
   mutate(chrom_color_group = case_when(as.numeric(chromosome) %% 2 != 0 ~ "even",
                                        TRUE ~ "odd" )) %>%
   mutate(chromosome = factor(chromosome, levels = c(1:22, "X", "Y"))) %>%
-  filter(statistic %in% c("avg_pi", "avg_dxy", "avg_wc_fst")) %>%
+  filter(statistic %in% c("avg_pi", "avg_dxy", "avg_hudson_fst")) %>%
   ggplot(aes(x = (window_pos_1 + window_pos_2)/2, y = value, color = chrom_color_group))+
   geom_point(size = 0.5, alpha = 0.5, stroke = 0)+
   facet_grid(statistic ~ chromosome,

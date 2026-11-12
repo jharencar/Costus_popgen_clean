@@ -1,0 +1,32 @@
+Introgression landscape comparison: full vs noNearHybrid 1 km
+Method: mean Dsuite stats in shared physical bins (window midpoints).
+Raw windows: full=171163, subset=89759
+Shared bins: 100 kb n=10469; 500 kb n=2209
+
+Genome-wide concordance (100 kb):
+  f_dM: r=0.835, rho=0.736, mean_delta=-0.0142, MAE=0.0452
+  d_f:  r=0.815, rho=0.706, mean_delta=-0.0209, MAE=0.0992
+
+Genome-wide concordance (500 kb smoothed):
+  f_dM: r=0.883, rho=0.792
+  d_f:  r=0.876, rho=0.777
+
+High-f_dM 100 kb outliers (bin mean > own-run 99|neg| thr): full=16, subset=10, both=3, Jaccard=0.130
+Top 1% f_dM bins (rank within each run) Jaccard=0.391
+
+Per-chromosome Spearman rho for f_dM (100 kb):
+  chr1: 0.783 (n=1424)
+  chr2: 0.771 (n=1459)
+  chr3: 0.625 (n=1168)
+  chr4: 0.755 (n=1057)
+  chr5: 0.688 (n=1312)
+  chr6: 0.742 (n=1131)
+  chr7: 0.692 (n=855)
+  chr8: 0.728 (n=1025)
+  chr9: 0.789 (n=1038)
+
+Interpretation sketch:
+  - Broad along-chromosome patterns are moderately to strongly conserved (rho often ~0.6-0.9).
+  - Absolute levels drop in the subset (negative mean delta).
+  - Extreme outlier bins are less shared than the overall landscape (lower Jaccard),
+    so peaks move/weaken more than the background pattern.
