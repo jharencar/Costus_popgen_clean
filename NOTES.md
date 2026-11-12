@@ -187,6 +187,7 @@ Also referenced in [`QTL/plot_GR_Nreabs_qtl_minimal.R`](QTL/plot_GR_Nreabs_qtl_m
 ### Scripts (repo `QTL/`)
 
 - **`fitqtl_summary_utils.R`** — shared parser for `*_QTL_model_output_251203` (used by variance plot, partition, heritability audit).
+- **`QTL_model_variances_plot.R`** — `% phenotypic variance` by component; ggsave **5 × 1.8 in** (shortened from 2.5).
 - **`genomic_heritability_QTL_traits.R`** — GRM + `sommer` REML; env `GENOPROB_RDS`; optional project **`R_libs/`** for dependencies.
 - **`genetic_variance_partition.R`** — SS-based supplementary partition from fitqtl drop-one tables.
 - **`build_genetic_architecture_summary.R`** — merges REML + partition → **`genetic_architecture_summary.csv`**.
@@ -259,6 +260,11 @@ Also referenced in [`QTL/plot_GR_Nreabs_qtl_minimal.R`](QTL/plot_GR_Nreabs_qtl_m
 ### Horizontal “side gap”
 
 - Controlled by **`x_expand <- expansion(mult = ..., add = 0)`**. Started from genome-wide convention **0.018**; tightened to **0.012** for slightly less margin at chr1 / chr9 edges (tune this one value if needed).
+
+### Panel heights (2026-11-11)
+
+- `plot_layout(heights = c(0.9, 0.9, 1.2, 1.45, 0.08))` for **f_dM**, **d_f**, **Dxy**, **Fst**, legend.
+  Was `c(0.55, 0.55, 1.45, 1.45, 0.08)` — introgression panels taller, Dxy a bit shorter.
 
 ### Warnings
 
@@ -445,11 +451,15 @@ Along-genome Fst panels in `04_introgression_vs_QTL/genome-wide_Fst.Dxy_w_QTL_pl
 figures, and `sup_genomewide_Fst_QTL_CIs`):
 
 - Background 10 kb points: `size = 1`, `alpha = 0.35`, `grey50`
-- 99th-percentile outliers: `geom_point_rast` `size = 1.5` (grey is `size = 1`; opaque singles
-  read smaller than overlapping translucent grey), `alpha = 1`, `#D62728`, `raster.dpi >= 600`
+- 99th-percentile outliers: vector `geom_point` (not rast — PDF sparse-dot washout), `size = 1.5`
+  (≈ grey rast `size = 1`), `alpha = 1`, `shape = 16`, `#D62728`
 - Thin dashed `#D62728` `geom_hline` at the genome-wide 99th percentile
 - All panels: `coord_cartesian(ylim = c(0, 1))` (display window only)
 - 500 kb darkred line unchanged
 - Fast replot while iterating (pixy + QTL only): `Rscript 04_introgression_vs_QTL/replot_fst_chr_panels.R`
 - Also writes a **single-column** 8-panel stack (`*_1col.pdf/png`, 22 × 48 cm) so each chromosome track is wider than in the 2×4 grid.
 - Layer order: grey 10 kb points → QTL CI/peak → dashed 99th line + red outliers + darkred 500 kb average (so outliers/avg sit on top of QTL).
+- Subset panels share styling: `ylim = c(0, 0.75)`, y breaks `0/0.25/0.5/0.7`, no x ticks/labels,
+  "Position (bp)" only on bottom panel, 2-panels at 22 × 12 cm.
+- Three-panel **chr 1 / 2 / 3**: `pixy/Fst_chr1_chr2_chr3_3panel.{png,pdf}` (22 × 14 cm).
+- Combo four-panel Fst: `coord_cartesian(ylim = c(0, NA))` (clip negative Hudson Fst in the display).

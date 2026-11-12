@@ -218,16 +218,17 @@ add_fst_foreground <- function(p, raw_df, win_df, cutoff99) {
       color = "#D62728",
       linewidth = 0.35
     ) +
-    # Slightly larger than grey size=1: opaque single dots read smaller than
-    # overlapping translucent grey. High DPI keeps #D62728 solid.
-    geom_point_rast(
+    # Vector points only: ggrastr washes out sparse outliers in PDF (pale red).
+    # size 1.5 ≈ grey rast size 1 visually; alpha=1 keeps #D62728 fully opaque.
+    geom_point(
       data = raw_df %>% filter(pmax(avg_hudson_fst, 0) > cutoff99),
       aes(x = window_pos_1, y = pmax(avg_hudson_fst, 0)),
       inherit.aes = FALSE,
       size = 1.5,
       alpha = 1,
-      color = "#D62728",
-      raster.dpi = max(fst_raster_dpi, 600L)
+      stroke = 0,
+      shape = 16,
+      color = "#D62728"
     ) +
     geom_line(
       data = win_df,
@@ -252,15 +253,67 @@ for (i in seq_along(chrom_list)) {
 }
 names(final_plots) <- paste0("Chrom", chrom_list)
 
-Fst_chr1_chr3_2panel <- (final_plots$Chrom1 / final_plots$Chrom3) &
-  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 15))
-ggsave(file.path(project_root, "pixy", "Fst_chr1_chr3_2panel.png"), Fst_chr1_chr3_2panel,
-       device = "png", width = 22, height = 10, units = "cm")
+# Shared subset-panel styling (2-panel and 3-panel)
+fst_ylim_subset <- 0.75
+fst_subset_title <- theme(
+  axis.text = element_text(size = 15),
+  axis.title = element_text(size = 15),
+  plot.title = element_text(hjust = 0.5, margin = margin(t = 2, b = 4))
+)
+fst_subset_no_x <- theme(
+  axis.title.x = element_blank(),
+  axis.text.x = element_blank(),
+  axis.ticks.x = element_blank()
+)
+fst_subset_y <- scale_y_continuous(breaks = c(0, 0.25, 0.5, 0.7))
+fst_subset_top <- function(p) {
+  p + coord_cartesian(ylim = c(0, fst_ylim_subset)) + fst_subset_y +
+    labs(x = NULL) + fst_subset_title + fst_subset_no_x +
+    theme(plot.margin = margin(2, 4, 0, 4))
+}
+fst_subset_mid <- function(p) {
+  p + coord_cartesian(ylim = c(0, fst_ylim_subset)) + fst_subset_y +
+    labs(x = NULL) + fst_subset_title + fst_subset_no_x +
+    theme(plot.margin = margin(4, 4, 0, 4))
+}
+fst_subset_bot <- function(p) {
+  p + coord_cartesian(ylim = c(0, fst_ylim_subset)) + fst_subset_y +
+    fst_subset_title +
+    theme(
+      plot.margin = margin(4, 4, 4, 4),
+      axis.text.x = element_blank(),
+      axis.ticks.x = element_blank()
+    )
+}
 
-Fst_chr1_chr6_2panel <- (final_plots$Chrom1 / final_plots$Chrom6) &
-  theme(axis.text = element_text(size = 15), axis.title = element_text(size = 15))
+Fst_chr1_chr3_2panel <- fst_subset_top(final_plots$Chrom1) / fst_subset_bot(final_plots$Chrom3)
+ggsave(file.path(project_root, "pixy", "Fst_chr1_chr3_2panel.png"), Fst_chr1_chr3_2panel,
+       device = "png", width = 22, height = 12, units = "cm", dpi = 200)
+ggsave(file.path(project_root, "pixy", "Fst_chr1_chr3_2panel.pdf"), Fst_chr1_chr3_2panel,
+       device = "pdf", width = 22, height = 12, units = "cm")
+
+Fst_chr1_chr6_2panel <- fst_subset_top(final_plots$Chrom1) / fst_subset_bot(final_plots$Chrom6)
 ggsave(file.path(project_root, "pixy", "Fst_chr1_chr6_2panel.png"), Fst_chr1_chr6_2panel,
-       device = "png", width = 22, height = 10, units = "cm")
+       device = "png", width = 22, height = 12, units = "cm", dpi = 200)
+ggsave(file.path(project_root, "pixy", "Fst_chr1_chr6_2panel.pdf"), Fst_chr1_chr6_2panel,
+       device = "pdf", width = 22, height = 12, units = "cm")
+
+Fst_chr1_chr2_chr3_3panel <- (
+  fst_subset_top(final_plots$Chrom1) /
+  fst_subset_mid(final_plots$Chrom2) /
+  fst_subset_bot(final_plots$Chrom3)
+)
+ggsave(
+  file.path(project_root, "pixy", "Fst_chr1_chr2_chr3_3panel.png"),
+  Fst_chr1_chr2_chr3_3panel,
+  device = "png", width = 22, height = 14, units = "cm", dpi = 200
+)
+ggsave(
+  file.path(project_root, "pixy", "Fst_chr1_chr2_chr3_3panel.pdf"),
+  Fst_chr1_chr2_chr3_3panel,
+  device = "pdf", width = 22, height = 14, units = "cm"
+)
+message("Wrote Fst subset 2-panel and 3-panel figures (ylim 0–", fst_ylim_subset, ")")
 
 fst_sup_theme <- theme(
   plot.title = element_text(size = 10, hjust = 0.5),

@@ -389,6 +389,8 @@ hudson_fst_plot <- ggplot(data = pixy_fst, aes(x = windowStart_cum, y = avg_huds
     linewidth = 0.7
   ) +
   scale_linetype_identity(guide = "none") +
+  # Display window: hide negative Hudson Fst (still in data / percentiles)
+  coord_cartesian(ylim = c(0, NA)) +
   theme(axis.text = element_text(size = 40), axis.title = element_text(size = 40))
 
 # =============================================================================
@@ -456,7 +458,8 @@ combo_Dsuite_pixy_4panel_fdm_df_dxy_fst <-
       DDDD
       EEEE
     ",
-    heights = c(0.55, 0.55, 1.45, 1.45, 0.08),
+    # A f_dM, B d_f taller; C Dxy a bit shorter; D Fst unchanged; E legend
+    heights = c(0.9, 0.9, 1.2, 1.45, 0.08),
     guides = "keep"
   ) +
   plot_annotation(tag_levels = list(c("A", "B", "C", "D")), tag_suffix = ")") &
@@ -488,14 +491,19 @@ message("Wrote ", out_pdf)
 
 if (dir.exists(final_figures_dir)) {
   sup_pdf <- file.path(final_figures_dir, "sup_4panel_fdm_df_dxy_fst.pdf")
-  ggsave(
-    sup_pdf,
-    combo_Dsuite_pixy_4panel_fdm_df_dxy_fst,
-    device = "pdf",
-    width = 100,
-    height = 70,
-    units = "cm",
-    bg = "white"
+  tryCatch(
+    {
+      ggsave(
+        sup_pdf,
+        combo_Dsuite_pixy_4panel_fdm_df_dxy_fst,
+        device = "pdf",
+        width = 100,
+        height = 70,
+        units = "cm",
+        bg = "white"
+      )
+      message("Wrote ", sup_pdf)
+    },
+    error = function(e) message("Skipped Final_figures write: ", conditionMessage(e))
   )
-  message("Wrote ", sup_pdf)
 }
