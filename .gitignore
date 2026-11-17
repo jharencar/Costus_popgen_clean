@@ -105,6 +105,7 @@ _local_root_duplicates/
 /combo_*.png
 /sup_*.png
 .tmp_map_inset/
+/_tmp_*
 
 # Data files archived on Dryad (CC0) only — do not ship with MIT code / Zenodo
 /sample_manifest/combined_sample_manifest.tsv

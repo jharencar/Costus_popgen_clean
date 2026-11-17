@@ -1568,55 +1568,138 @@ message(
   paste(format(qtl_fst_01cm_ci %>% count(qtl_id, effect_class), n = Inf), collapse = "\n")
 )
 
-qtl_fst_peak_01 <- qtl_cm_on_map() %>%
+qtl_peak_01_base <- qtl_cm_on_map() %>%
   mutate(
     qtl_id = paste(trait, chr, sep = "_chr"),
     trait = factor(trait, levels = names(trait_colors)),
     chr = as.integer(chr),
     cM_bin = floor(cm_peak / 0.1)
-  ) %>%
-  left_join(
-    fst_01cm %>% mutate(chrN = as.integer(chrN)) %>% select(chrN, cM_bin, peak_fst = avg_fst),
-    by = c("chr" = "chrN", "cM_bin")
-  ) %>%
-  rowwise() %>%
-  mutate(
-    peak_density = density_at(
-      qtl_fst_01cm_ci$value[as.character(qtl_fst_01cm_ci$qtl_id) == qtl_id],
-      peak_fst
-    )
-  ) %>%
-  ungroup()
-if (any(!is.finite(qtl_fst_peak_01$peak_fst))) {
-  missing_peaks <- qtl_fst_peak_01 %>% filter(!is.finite(peak_fst))
-  warning(
-    "No 0.1 cM Fst bin covers the QTL peak for: ",
-    paste(missing_peaks$qtl_id, collapse = ", ")
   )
+
+peak_points_01cm <- function(bins, value_col, qtl_ci, peak_name) {
+  bins_chr <- bins %>%
+    mutate(
+      chrN = as.integer(chrN),
+      bin_mid_cM = cM_bin * 0.1 + 0.05,
+      peak_value = .data[[value_col]]
+    ) %>%
+    select(chrN, cM_bin, bin_mid_cM, peak_value)
+
+  # Exact 0.1 cM bin containing peak_bp; if absent, nearest bin on that chromosome.
+  pick_peak_bin <- function(chr_i, cm_peak_i, cM_bin_i) {
+    exact <- bins_chr[bins_chr$chrN == chr_i & bins_chr$cM_bin == cM_bin_i, , drop = FALSE]
+    if (nrow(exact) == 1L) {
+      return(list(
+        peak_value = exact$peak_value[[1]],
+        peak_cM_bin = as.integer(exact$cM_bin[[1]]),
+        peak_bin_source = "exact"
+      ))
+    }
+    same_chr <- bins_chr[bins_chr$chrN == chr_i, , drop = FALSE]
+    if (nrow(same_chr) == 0L) {
+      return(list(
+        peak_value = NA_real_,
+        peak_cM_bin = NA_integer_,
+        peak_bin_source = "none"
+      ))
+    }
+    i <- which.min(abs(same_chr$bin_mid_cM - cm_peak_i))
+    list(
+      peak_value = same_chr$peak_value[[i]],
+      peak_cM_bin = as.integer(same_chr$cM_bin[[i]]),
+      peak_bin_source = "nearest"
+    )
+  }
+
+  picks <- lapply(
+    seq_len(nrow(qtl_peak_01_base)),
+    function(i) {
+      pick_peak_bin(
+        qtl_peak_01_base$chr[[i]],
+        qtl_peak_01_base$cm_peak[[i]],
+        qtl_peak_01_base$cM_bin[[i]]
+      )
+    }
+  )
+
+  pts <- qtl_peak_01_base %>%
+    mutate(
+      peak_value = vapply(picks, `[[`, numeric(1), "peak_value"),
+      peak_cM_bin = vapply(picks, `[[`, integer(1), "peak_cM_bin"),
+      peak_bin_source = vapply(picks, `[[`, character(1), "peak_bin_source")
+    ) %>%
+    rowwise() %>%
+    mutate(
+      peak_density = density_at(
+        qtl_ci$value[as.character(qtl_ci$qtl_id) == qtl_id],
+        peak_value
+      )
+    ) %>%
+    ungroup() %>%
+    rename(!!peak_name := peak_value)
+
+  nearest_used <- pts %>% filter(peak_bin_source == "nearest")
+  if (nrow(nearest_used) > 0) {
+    message(
+      "0.1 cM ", peak_name, ": used nearest bin for ",
+      paste(nearest_used$qtl_id, collapse = ", "),
+      " (no exact peak bin)."
+    )
+  }
+  still_missing <- pts %>% filter(!is.finite(.data[[peak_name]]))
+  if (nrow(still_missing) > 0) {
+    warning(
+      "No 0.1 cM ", peak_name, " bins on chromosome for: ",
+      paste(still_missing$qtl_id, collapse = ", ")
+    )
+  }
+  pts
 }
 
-fst_01cm_dist <- dist_10kb_qtl_ci(
-  fst_01cm, "avg_fst", qtl_fst_01cm_ci,
-  "Fst (0.1 cM windows)", display_xlim(fst_01cm$avg_fst), 0.005
-) +
-  geom_point(
-    data = qtl_fst_peak_01 %>% filter(is.finite(peak_fst), is.finite(peak_density)),
-    aes(x = peak_fst, y = peak_density, fill = trait),
-    shape = 21,
-    color = "black",
-    size = 2.8,
-    stroke = 0.45,
-    inherit.aes = FALSE,
-    show.legend = FALSE
-  ) +
-  scale_fill_manual(values = trait_colors, guide = "none")
-dxy_01cm_dist <- dist_10kb_qtl_ci(
-  dxy_01cm, "avg_dxy", qtl_dxy_01cm_ci,
-  expression(italic(D)[xy] ~ "(0.1 cM windows)"), display_xlim(dxy_01cm$avg_dxy), 0.0005
+qtl_fst_peak_01 <- peak_points_01cm(fst_01cm, "avg_fst", qtl_fst_01cm_ci, "peak_fst")
+qtl_dxy_peak_01 <- peak_points_01cm(dxy_01cm, "avg_dxy", qtl_dxy_01cm_ci, "peak_dxy")
+qtl_fdm_peak_01 <- peak_points_01cm(fdm_01cm, "avg_f_dM", qtl_fdm_01cm_ci, "peak_f_dM")
+
+add_peak_points_01cm <- function(p, pts, x_col) {
+  p +
+    geom_point(
+      data = pts %>%
+        filter(is.finite(.data[[x_col]]), is.finite(peak_density)) %>%
+        mutate(x_peak = .data[[x_col]]),
+      aes(x = x_peak, y = peak_density, fill = trait),
+      shape = 21,
+      color = "black",
+      size = 2.8,
+      stroke = 0.45,
+      inherit.aes = FALSE,
+      show.legend = FALSE
+    ) +
+    scale_fill_manual(values = trait_colors, guide = "none")
+}
+
+fst_01cm_dist <- add_peak_points_01cm(
+  dist_10kb_qtl_ci(
+    fst_01cm, "avg_fst", qtl_fst_01cm_ci,
+    "Fst (0.1 cM windows)", display_xlim(fst_01cm$avg_fst), 0.005
+  ),
+  qtl_fst_peak_01,
+  "peak_fst"
 )
-fdm_01cm_dist <- dist_10kb_qtl_ci(
-  fdm_01cm, "avg_f_dM", qtl_fdm_01cm_ci,
-  expression(italic(f)[d * M] ~ "(0.1 cM windows)"), display_xlim(fdm_01cm$avg_f_dM), 0.005
+dxy_01cm_dist <- add_peak_points_01cm(
+  dist_10kb_qtl_ci(
+    dxy_01cm, "avg_dxy", qtl_dxy_01cm_ci,
+    expression(italic(D)[xy] ~ "(0.1 cM windows)"), display_xlim(dxy_01cm$avg_dxy), 0.0005
+  ),
+  qtl_dxy_peak_01,
+  "peak_dxy"
+)
+fdm_01cm_dist <- add_peak_points_01cm(
+  dist_10kb_qtl_ci(
+    fdm_01cm, "avg_f_dM", qtl_fdm_01cm_ci,
+    expression(italic(f)[d * M] ~ "(0.1 cM windows)"), display_xlim(fdm_01cm$avg_f_dM), 0.005
+  ),
+  qtl_fdm_peak_01,
+  "peak_f_dM"
 )
 
 fst_dxy_fdm_01cm_3panel <- fst_01cm_dist /
@@ -1641,6 +1724,14 @@ ggsave(
   units = "cm",
   dpi = 200
 )
+ggsave(
+  file.path(project_root, "Fst_genomewide_distribution_0.1cM_w_QTL_CI.pdf"),
+  fst_01cm_dist,
+  device = "pdf",
+  width = 16,
+  height = 6.5,
+  units = "cm"
+)
 dxy_fdm_01cm_2panel <- dxy_01cm_dist /
   (fdm_01cm_dist + guides(color = "none", linetype = "none")) +
   plot_layout(guides = "collect")
@@ -1652,4 +1743,12 @@ ggsave(
   height = 12,
   units = "cm",
   dpi = 200
+)
+ggsave(
+  file.path(project_root, "Dxy_fdM_genomewide_distribution_0.1cM_w_QTL_CI_2panel.pdf"),
+  dxy_fdm_01cm_2panel,
+  device = "pdf",
+  width = 18.5,
+  height = 12,
+  units = "cm"
 )

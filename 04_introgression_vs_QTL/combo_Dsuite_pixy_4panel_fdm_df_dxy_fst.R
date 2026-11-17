@@ -443,27 +443,31 @@ qtl_legend_plot <- ggplot() +
   )
 qtl_legend_grob <- get_legend(qtl_legend_plot)
 
-# Tag only the four data panels (A–D). Explicit tags so the QTL legend row is not "E)".
-combo_Dsuite_pixy_4panel_fdm_df_dxy_fst <-
+# Tag only the four data panels (A–D). Nest the QTL legend outside that patchwork
+# so it never receives tag_suffix ")" (a leftover ")" appeared when the legend
+# was a 5th tagged panel after pi was removed).
+combo_data_panels <-
   LASI_99thper_w50s25_f_dM +
   LASI_99thper_w50s25_d_f +
   Dxy_plot +
   hudson_fst_plot +
-  wrap_elements(full = qtl_legend_grob) +
   plot_layout(
     design = "
       AAAA
       BBBB
       CCCC
       DDDD
-      EEEE
     ",
-    # A f_dM, B d_f taller; C Dxy a bit shorter; D Fst unchanged; E legend
-    heights = c(0.9, 0.9, 1.2, 1.45, 0.08),
+    # A f_dM, B d_f taller; C Dxy a bit shorter; D Fst
+    heights = c(0.9, 0.9, 1.2, 1.45),
     guides = "keep"
   ) +
   plot_annotation(tag_levels = list(c("A", "B", "C", "D")), tag_suffix = ")") &
   combo_panel_theme
+
+combo_Dsuite_pixy_4panel_fdm_df_dxy_fst <-
+  combo_data_panels / wrap_elements(full = qtl_legend_grob) +
+  plot_layout(heights = c(1, 0.08), guides = "keep")
 
 out_png <- file.path(project_root, "combo_Dsuite_pixy_4panel_fdm_df_dxy_fst.png")
 out_pdf <- file.path(project_root, "combo_Dsuite_pixy_4panel_fdm_df_dxy_fst.pdf")

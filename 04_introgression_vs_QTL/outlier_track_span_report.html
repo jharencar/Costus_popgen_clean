@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Outlier track spans — Fst and Dxy</title>
+<style>
+:root { --ink:#1a1a1a; --muted:#555; --line:#ccc; --bg:#fafafa; --accent:#245b4a; }
+body { margin:0; font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif; color:var(--ink); background:var(--bg); line-height:1.45; }
+header { background:#fff; border-bottom:1px solid var(--line); padding:1.2rem 1.5rem 0.8rem; }
+header h1 { margin:0 0 0.35rem; font-size:1.55rem; font-weight:600; }
+header p { margin:0; color:var(--muted); font-size:0.95rem; max-width:52rem; }
+nav { display:flex; gap:0.5rem; margin-top:0.9rem; }
+nav button { font:inherit; border:1px solid var(--line); background:#fff; padding:0.4rem 0.9rem; border-radius:4px; cursor:pointer; color:var(--ink); }
+nav button[aria-selected='true'] { background:var(--accent); color:#fff; border-color:var(--accent); }
+main { padding:1.25rem 1.5rem 2.5rem; max-width:70rem; }
+.page { display:none; }
+.page.active { display:block; }
+h2 { font-size:1.15rem; margin:1.6rem 0 0.4rem; }
+.meta { color:var(--muted); font-size:0.92rem; margin:0 0 0.7rem; max-width:52rem; }
+table { border-collapse:collapse; width:100%; background:#fff; margin-bottom:0.5rem; font-variant-numeric:tabular-nums; }
+caption { text-align:left; font-weight:600; padding:0.4rem 0; caption-side:top; }
+th, td { border:1px solid var(--line); padding:0.4rem 0.55rem; text-align:left; vertical-align:top; }
+th { background:#f0f3f1; font-weight:600; }
+td:nth-child(1), td:nth-child(2), td:nth-child(3), td:nth-child(4) { text-align:right; width:7rem; }
+footer { color:var(--muted); font-size:0.85rem; padding:0 1.5rem 2rem; max-width:70rem; }
+@media print { nav { display:none; } .page { display:block !important; page-break-after:always; } }
+</style>
+</head>
+<body>
+<header>
+<h1>Outlier track spans</h1>
+<p>Hudson <i>F</i><sub>st</sub> and <i>D</i><sub>xy</sub> 10 kb outlier tracks at the 95th and 99th percentiles. Chromosome 4 is excluded from track counts. QTL columns use the seven retained 95% credible intervals (Nreabs chr2 and GR chr5 dropped). A track in a QTL CI means the track interval intersects a CI.</p>
+<nav role="tablist" aria-label="Statistic">
+<button role="tab" id="tab-fst" aria-selected="true" aria-controls="page-fst">Hudson Fst</button>
+<button role="tab" id="tab-dxy" aria-selected="false" aria-controls="page-dxy">Dxy</button>
+</nav>
+</header>
+<main>
+<div class="page active" id="page-fst" role="tabpanel" aria-labelledby="tab-fst">
+<section class="table-block">
+<h2>Hudson Fst 99th percentile — adjacent tracks</h2>
+<p class="meta">Cutoff = 0.4976 (genome-wide 99th percentile of avg_hudson_fst, including chr 4). Outlier windows on chr ≠ 4: 884. Tracks: 867. Tracks are runs of outlier 10 kb windows that start exactly 10 kb apart.</p>
+<table>
+<caption>Hudson Fst 99th percentile — adjacent tracks</caption>
+<thead><tr><th>Spanned 10 kb slots</th><th>Span (kb)</th><th>Tracks</th><th>Tracks in a QTL CI</th><th>QTL CIs</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>10</td><td>851</td><td>31</td><td>Chlreabs chr1, GR chr3, Nreabs chr1, SD chr2, SD chr6, tough chr3, tough chr8</td></tr>
+<tr><td>2</td><td>20</td><td>15</td><td>1</td><td>SD chr2</td></tr>
+<tr><td>3</td><td>30</td><td>1</td><td>0</td><td>—</td></tr>
+</tbody></table>
+</section>
+
+<section class="table-block">
+<h2>Hudson Fst 99th percentile — bridge up to 10 missing windows</h2>
+<p class="meta">Cutoff = 0.4976 (genome-wide 99th percentile of avg_hudson_fst, including chr 4). Outlier windows on chr ≠ 4: 884. Tracks: 865. Tracks also merge outliers separated by 1–10 intervening 10 kb slots that are missing (absent or non-finite). A finite below-threshold window breaks the track. Span is the full base-pair distance from the first to last window in the track.</p>
+<table>
+<caption>Hudson Fst 99th percentile — bridge up to 10 missing windows</caption>
+<thead><tr><th>Spanned 10 kb slots</th><th>Span (kb)</th><th>Tracks</th><th>Tracks in a QTL CI</th><th>QTL CIs</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>10</td><td>847</td><td>31</td><td>Chlreabs chr1, GR chr3, Nreabs chr1, SD chr2, SD chr6, tough chr3, tough chr8</td></tr>
+<tr><td>2</td><td>20</td><td>15</td><td>1</td><td>SD chr2</td></tr>
+<tr><td>3</td><td>30</td><td>2</td><td>0</td><td>—</td></tr>
+<tr><td>5</td><td>50</td><td>1</td><td>0</td><td>—</td></tr>
+</tbody></table>
+</section>
+
+<section class="table-block">
+<h2>Hudson Fst 95th percentile — adjacent tracks</h2>
+<p class="meta">Cutoff = 0.415 (genome-wide 95th percentile of avg_hudson_fst, including chr 4). Outlier windows on chr ≠ 4: 4445. Tracks: 4007. Tracks are runs of outlier 10 kb windows that start exactly 10 kb apart.</p>
+<table>
+<caption>Hudson Fst 95th percentile — adjacent tracks</caption>
+<thead><tr><th>Spanned 10 kb slots</th><th>Span (kb)</th><th>Tracks</th><th>Tracks in a QTL CI</th><th>QTL CIs</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>10</td><td>3625</td><td>184</td><td>Chlreabs chr1, GR chr3, Nreabs chr1, SD chr2, SD chr6, tough chr3, tough chr8</td></tr>
+<tr><td>2</td><td>20</td><td>334</td><td>15</td><td>GR chr3, Nreabs chr1, SD chr2, tough chr3, tough chr8</td></tr>
+<tr><td>3</td><td>30</td><td>40</td><td>5</td><td>Nreabs chr1, SD chr2, SD chr6</td></tr>
+<tr><td>4</td><td>40</td><td>8</td><td>0</td><td>—</td></tr>
+</tbody></table>
+</section>
+
+<section class="table-block">
+<h2>Hudson Fst 95th percentile — bridge up to 10 missing windows</h2>
+<p class="meta">Cutoff = 0.415 (genome-wide 95th percentile of avg_hudson_fst, including chr 4). Outlier windows on chr ≠ 4: 4445. Tracks: 3989. Tracks also merge outliers separated by 1–10 intervening 10 kb slots that are missing (absent or non-finite). A finite below-threshold window breaks the track. Span is the full base-pair distance from the first to last window in the track.</p>
+<table>
+<caption>Hudson Fst 95th percentile — bridge up to 10 missing windows</caption>
+<thead><tr><th>Spanned 10 kb slots</th><th>Span (kb)</th><th>Tracks</th><th>Tracks in a QTL CI</th><th>QTL CIs</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>10</td><td>3591</td><td>184</td><td>Chlreabs chr1, GR chr3, Nreabs chr1, SD chr2, SD chr6, tough chr3, tough chr8</td></tr>
+<tr><td>2</td><td>20</td><td>333</td><td>15</td><td>GR chr3, Nreabs chr1, SD chr2, tough chr3, tough chr8</td></tr>
+<tr><td>3</td><td>30</td><td>51</td><td>5</td><td>Nreabs chr1, SD chr2, SD chr6</td></tr>
+<tr><td>4</td><td>40</td><td>12</td><td>0</td><td>—</td></tr>
+<tr><td>5</td><td>50</td><td>2</td><td>0</td><td>—</td></tr>
+</tbody></table>
+</section>
+</div>
+<div class="page" id="page-dxy" role="tabpanel" aria-labelledby="tab-dxy">
+<section class="table-block">
+<h2>Dxy 99th percentile — adjacent tracks</h2>
+<p class="meta">Cutoff = 0.03757 (genome-wide 99th percentile of avg_dxy, including chr 4). Outlier windows on chr ≠ 4: 947. Tracks: 880. Tracks are runs of outlier 10 kb windows that start exactly 10 kb apart.</p>
+<table>
+<caption>Dxy 99th percentile — adjacent tracks</caption>
+<thead><tr><th>Spanned 10 kb slots</th><th>Span (kb)</th><th>Tracks</th><th>Tracks in a QTL CI</th><th>QTL CIs</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>10</td><td>816</td><td>31</td><td>GR chr3, Nreabs chr1, SD chr2, SD chr6, tough chr3, tough chr8</td></tr>
+<tr><td>2</td><td>20</td><td>62</td><td>1</td><td>tough chr3</td></tr>
+<tr><td>3</td><td>30</td><td>1</td><td>0</td><td>—</td></tr>
+<tr><td>4</td><td>40</td><td>1</td><td>0</td><td>—</td></tr>
+</tbody></table>
+</section>
+
+<section class="table-block">
+<h2>Dxy 99th percentile — bridge up to 10 missing windows</h2>
+<p class="meta">Cutoff = 0.03757 (genome-wide 99th percentile of avg_dxy, including chr 4). Outlier windows on chr ≠ 4: 947. Tracks: 877. Tracks also merge outliers separated by 1–10 intervening 10 kb slots that are missing (absent or non-finite). A finite below-threshold window breaks the track. Span is the full base-pair distance from the first to last window in the track.</p>
+<table>
+<caption>Dxy 99th percentile — bridge up to 10 missing windows</caption>
+<thead><tr><th>Spanned 10 kb slots</th><th>Span (kb)</th><th>Tracks</th><th>Tracks in a QTL CI</th><th>QTL CIs</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>10</td><td>810</td><td>31</td><td>GR chr3, Nreabs chr1, SD chr2, SD chr6, tough chr3, tough chr8</td></tr>
+<tr><td>2</td><td>20</td><td>62</td><td>1</td><td>tough chr3</td></tr>
+<tr><td>3</td><td>30</td><td>3</td><td>0</td><td>—</td></tr>
+<tr><td>4</td><td>40</td><td>1</td><td>0</td><td>—</td></tr>
+<tr><td>6</td><td>60</td><td>1</td><td>0</td><td>—</td></tr>
+</tbody></table>
+</section>
+
+<section class="table-block">
+<h2>Dxy 95th percentile — adjacent tracks</h2>
+<p class="meta">Cutoff = 0.02505 (genome-wide 95th percentile of avg_dxy, including chr 4). Outlier windows on chr ≠ 4: 4690. Tracks: 4124. Tracks are runs of outlier 10 kb windows that start exactly 10 kb apart.</p>
+<table>
+<caption>Dxy 95th percentile — adjacent tracks</caption>
+<thead><tr><th>Spanned 10 kb slots</th><th>Span (kb)</th><th>Tracks</th><th>Tracks in a QTL CI</th><th>QTL CIs</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>10</td><td>3629</td><td>130</td><td>Chlreabs chr1, GR chr3, Nreabs chr1, SD chr2, SD chr6, tough chr3, tough chr8</td></tr>
+<tr><td>2</td><td>20</td><td>436</td><td>19</td><td>Chlreabs chr1, GR chr3, Nreabs chr1, SD chr2, tough chr3</td></tr>
+<tr><td>3</td><td>30</td><td>48</td><td>2</td><td>tough chr3, tough chr8</td></tr>
+<tr><td>4</td><td>40</td><td>10</td><td>1</td><td>Nreabs chr1</td></tr>
+<tr><td>5</td><td>50</td><td>1</td><td>0</td><td>—</td></tr>
+</tbody></table>
+</section>
+
+<section class="table-block">
+<h2>Dxy 95th percentile — bridge up to 10 missing windows</h2>
+<p class="meta">Cutoff = 0.02505 (genome-wide 95th percentile of avg_dxy, including chr 4). Outlier windows on chr ≠ 4: 4690. Tracks: 4106. Tracks also merge outliers separated by 1–10 intervening 10 kb slots that are missing (absent or non-finite). A finite below-threshold window breaks the track. Span is the full base-pair distance from the first to last window in the track.</p>
+<table>
+<caption>Dxy 95th percentile — bridge up to 10 missing windows</caption>
+<thead><tr><th>Spanned 10 kb slots</th><th>Span (kb)</th><th>Tracks</th><th>Tracks in a QTL CI</th><th>QTL CIs</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>10</td><td>3595</td><td>130</td><td>Chlreabs chr1, GR chr3, Nreabs chr1, SD chr2, SD chr6, tough chr3, tough chr8</td></tr>
+<tr><td>2</td><td>20</td><td>435</td><td>19</td><td>Chlreabs chr1, GR chr3, Nreabs chr1, SD chr2, tough chr3</td></tr>
+<tr><td>3</td><td>30</td><td>60</td><td>2</td><td>tough chr3, tough chr8</td></tr>
+<tr><td>4</td><td>40</td><td>13</td><td>1</td><td>Nreabs chr1</td></tr>
+<tr><td>5</td><td>50</td><td>1</td><td>0</td><td>—</td></tr>
+<tr><td>6</td><td>60</td><td>2</td><td>0</td><td>—</td></tr>
+</tbody></table>
+</section>
+</div>
+</main>
+<footer>Generated by <code>04_introgression_vs_QTL/outlier_track_span_report.R</code>. Adjacent mode requires successive outlier windows to start 10 kb apart. Gap mode allows 1–10 missing intervening 10 kb slots; finite below-threshold windows break tracks.</footer>
+<script>
+const tabs = [...document.querySelectorAll('nav button')];
+const pages = { 'tab-fst': 'page-fst', 'tab-dxy': 'page-dxy' };
+tabs.forEach(btn => btn.addEventListener('click', () => {
+  tabs.forEach(b => b.setAttribute('aria-selected', b === btn ? 'true' : 'false'));
+  Object.values(pages).forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById(pages[btn.id]).classList.add('active');
+}));
+</script>
+</body>
+</html>
+

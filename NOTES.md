@@ -263,7 +263,8 @@ Also referenced in [`QTL/plot_GR_Nreabs_qtl_minimal.R`](QTL/plot_GR_Nreabs_qtl_m
 
 ### Panel heights (2026-11-11)
 
-- `plot_layout(heights = c(0.9, 0.9, 1.2, 1.45, 0.08))` for **f_dM**, **d_f**, **Dxy**, **Fst**, legend.
+- `plot_layout(heights = c(0.9, 0.9, 1.2, 1.45))` for **f_dM**, **d_f**, **Dxy**, **Fst**; legend nested
+  below (not a 5th tagged panel) so `tag_suffix = ")"` cannot leave a lone ")" after pi was dropped.
   Was `c(0.55, 0.55, 1.45, 1.45, 0.08)` — introgression panels taller, Dxy a bit shorter.
 
 ### Warnings
